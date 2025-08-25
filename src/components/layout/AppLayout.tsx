@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useSession } from "next-auth/react";
 import { Menu } from "lucide-react";
 import { TopNav } from "./TopNav";
 import { SideNav, NavItems } from "./SideNav";
@@ -11,28 +10,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   
-  // Show loading while checking authentication
-  if (status === 'loading') {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  }
-  
-  // If not authenticated, don't render content
-  if (!session) {
-    return <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-lg font-medium">Authentication required</h2>
-        <p className="mt-2">Please log in to access this page.</p>
-        <Button className="mt-4" onClick={() => window.location.href = '/login'}>
-          Go to login
-        </Button>
-      </div>
-    </div>;
-  }
-  
-  // User is authenticated, render the layout
   return (
     <div className="flex min-h-screen flex-col">
       <TopNav />
