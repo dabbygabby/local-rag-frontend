@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Settings, FileText, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -115,9 +116,9 @@ export default function QueryPlayground() {
       </div>
 
       {/* Two-panel layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Configuration */}
-        <div className="space-y-6">
+        <div className="space-y-6 col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -366,7 +367,7 @@ export default function QueryPlayground() {
         </div>
 
         {/* Right Panel - Results */}
-        <div className="space-y-6">
+        <div className="space-y-6 col-span-2">
           <Card className="min-h-[600px]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -443,6 +444,7 @@ export default function QueryPlayground() {
                     <CardContent>
                       <div className="prose prose-sm max-w-none dark:prose-invert">
                         <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
                           components={{
                             h1: ({ children }) => <h1 className="text-xl font-bold mb-4">{children}</h1>,
                             h2: ({ children }) => <h2 className="text-lg font-semibold mb-3">{children}</h2>,
@@ -466,10 +468,12 @@ export default function QueryPlayground() {
                               <blockquote className="border-l-4 border-muted pl-4 italic mb-4">{children}</blockquote>
                             ),
                             table: ({ children }) => (
-                              <div className="overflow-x-auto mb-6 rounded-lg border border-border">
-                                <table className="min-w-full divide-y divide-border">
-                                  {children}
-                                </table>
+                              <div className="my-6 overflow-hidden rounded-lg border border-border shadow-sm">
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full divide-y divide-border">
+                                    {children}
+                                  </table>
+                                </div>
                               </div>
                             ),
                             thead: ({ children }) => (
@@ -493,8 +497,10 @@ export default function QueryPlayground() {
                               </th>
                             ),
                             td: ({ children }) => (
-                              <td className="px-6 py-4 text-sm text-foreground border-r border-border last:border-r-0 whitespace-nowrap">
-                                {children}
+                              <td className="px-6 py-4 text-sm text-foreground border-r border-border last:border-r-0">
+                                <div className="max-w-xs break-words">
+                                  {children}
+                                </div>
                               </td>
                             ),
                           }}
