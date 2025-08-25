@@ -19,14 +19,17 @@ export default function QueryPlayground() {
   // Form state - mirrors the QueryRequest structure
   const [formState, setFormState] = useState<QueryRequest>({
     question: "",
+    include_metadata: false,
     system_prompt: "",
-    vector_stores: [],
-    top_k: 5,
-    similarity_threshold: 0.7,
+    top_k: 20,
+    max_docs_for_context: 3,
+    similarity_threshold: 0,
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 1000,
     include_sources: true,
+    include_confidence: false,
     query_expansion: false,
+    vector_stores: [],
     metadata_filters: {},
   });
 
@@ -208,6 +211,21 @@ export default function QueryPlayground() {
                         Minimum similarity score for retrieved documents
                       </p>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Max Docs for Context: {formState.max_docs_for_context}</Label>
+                      <Slider
+                        value={[formState.max_docs_for_context]}
+                        onValueChange={([value]) => updateFormField("max_docs_for_context", value)}
+                        max={10}
+                        min={1}
+                        step={1}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Maximum number of documents to use for generating context
+                      </p>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
 
@@ -261,6 +279,32 @@ export default function QueryPlayground() {
                       <Switch
                         checked={formState.include_sources}
                         onCheckedChange={(checked) => updateFormField("include_sources", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Include Metadata</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Include document metadata in the response
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formState.include_metadata}
+                        onCheckedChange={(checked) => updateFormField("include_metadata", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Include Confidence</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Include confidence scores in the response
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formState.include_confidence}
+                        onCheckedChange={(checked) => updateFormField("include_confidence", checked)}
                       />
                     </div>
 

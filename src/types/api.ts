@@ -82,14 +82,17 @@ export interface Document {
 // Query Types
 export interface QueryRequest {
   question: string;
+  include_metadata: boolean;
   system_prompt?: string;
-  vector_stores: string[];
   top_k: number;
+  max_docs_for_context: number;
   similarity_threshold: number;
   temperature: number;
   max_tokens: number;
   include_sources: boolean;
+  include_confidence: boolean;
   query_expansion: boolean;
+  vector_stores: string[];
   metadata_filters?: Record<string, unknown>;
 }
 
