@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { vectorStoreApi, documentApi, uploadDocument, formatFileSize } from "@/lib/api";
 import { UpdateVectorStoreRequest, FileUploadStatus } from "@/types/api";
@@ -53,6 +54,9 @@ export default function StoreDetailPage() {
   const [textUpload, setTextUpload] = useState("");
   const [textUploadFilename, setTextUploadFilename] = useState("");
   const [isUploadingText, setIsUploadingText] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"documents" | "markdown">("documents");
 
   // Fetch store data
   const {
@@ -157,6 +161,9 @@ export default function StoreDetailPage() {
 
         // Refresh documents list
         refetchDocuments();
+        
+        // Close the upload modal after successful upload
+        setShowUploadModal(false);
       } catch (error) {
         setUploadFiles((prev) =>
           prev.map((upload) =>
@@ -201,6 +208,7 @@ export default function StoreDetailPage() {
         description: "Settings have been saved.",
       });
       refetchStore();
+      setShowUpdateModal(false);
     } catch (error) {
       toast({
         title: "❌ Failed to update store",
@@ -294,6 +302,9 @@ export default function StoreDetailPage() {
       
       // Refresh documents list
       refetchDocuments();
+      
+      // Close the upload modal
+      setShowUploadModal(false);
     } catch (error) {
       toast({
         title: "❌ Text upload failed",
@@ -373,6 +384,16 @@ export default function StoreDetailPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-2 mb-4">
+            <Button variant="outline" onClick={() => setShowUpdateModal(true)}>
+              Update
+            </Button>
+            <Button onClick={() => setShowUploadModal(true)}>
+              Add / Upload
+            </Button>
+          </div>
+
           {/* Overview Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Store Information */}
@@ -461,88 +482,7 @@ export default function StoreDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Settings Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Update Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit(onUpdateSettings)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    {...register("name", { required: "Name is required" })}
-                    disabled={isUpdating}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-600">{errors.name.message}</p>
-                  )}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    {...register("description")}
-                    disabled={isUpdating}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="chunk_size">Chunk Size</Label>
-                    <Input
-                      id="chunk_size"
-                      type="number"
-                      {...register("config.chunk_size", {
-                        required: "Chunk size is required",
-                        min: { value: 100, message: "Minimum chunk size is 100" },
-                      })}
-                      disabled={isUpdating}
-                    />
-                    {errors.config?.chunk_size && (
-                      <p className="text-sm text-red-600">{errors.config.chunk_size.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="chunk_overlap">Chunk Overlap</Label>
-                    <Input
-                      id="chunk_overlap"
-                      type="number"
-                      {...register("config.chunk_overlap", {
-                        required: "Chunk overlap is required",
-                        min: { value: 0, message: "Minimum chunk overlap is 0" },
-                      })}
-                      disabled={isUpdating}
-                    />
-                    {errors.config?.chunk_overlap && (
-                      <p className="text-sm text-red-600">{errors.config.chunk_overlap.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="embedding_model">Embedding Model</Label>
-                    <Input
-                      id="embedding_model"
-                      {...register("config.embedding_model", {
-                        required: "Embedding model is required",
-                      })}
-                      disabled={isUpdating}
-                    />
-                    {errors.config?.embedding_model && (
-                      <p className="text-sm text-red-600">{errors.config.embedding_model.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <Button type="submit" disabled={!isDirty || isUpdating}>
-                  {isUpdating ? "Updating..." : "Update Settings"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Documents Tab */}
@@ -781,6 +721,282 @@ export default function StoreDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Update Settings Modal */}
+      <Dialog open={showUpdateModal} onOpenChange={setShowUpdateModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Update Settings</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onUpdateSettings)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                {...register("name", { required: "Name is required" })}
+                disabled={isUpdating}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                {...register("description")}
+                disabled={isUpdating}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="chunk_size">Chunk Size</Label>
+                <Input
+                  id="chunk_size"
+                  type="number"
+                  {...register("config.chunk_size", {
+                    required: "Chunk size is required",
+                    min: { value: 100, message: "Minimum chunk size is 100" },
+                  })}
+                  disabled={isUpdating}
+                />
+                {errors.config?.chunk_size && (
+                  <p className="text-sm text-red-600">{errors.config.chunk_size.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="chunk_overlap">Chunk Overlap</Label>
+                <Input
+                  id="chunk_overlap"
+                  type="number"
+                  {...register("config.chunk_overlap", {
+                    required: "Chunk overlap is required",
+                    min: { value: 0, message: "Minimum chunk overlap is 0" },
+                  })}
+                  disabled={isUpdating}
+                />
+                {errors.config?.chunk_overlap && (
+                  <p className="text-sm text-red-600">{errors.config.chunk_overlap.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="embedding_model">Embedding Model</Label>
+                <Input
+                  id="embedding_model"
+                  {...register("config.embedding_model", {
+                    required: "Embedding model is required",
+                  })}
+                  disabled={isUpdating}
+                />
+                {errors.config?.embedding_model && (
+                  <p className="text-sm text-red-600">{errors.config.embedding_model.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowUpdateModal(false)}
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!isDirty || isUpdating}>
+                {isUpdating ? "Updating..." : "Update Settings"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Upload Modal */}
+      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add / Upload</DialogTitle>
+          </DialogHeader>
+          
+          {/* Upload Mode Selector */}
+          <div className="flex space-x-1 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setUploadMode("documents")}
+              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+                uploadMode === "documents"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Upload Documents
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode("markdown")}
+              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+                uploadMode === "markdown"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Upload Text as Markdown
+            </button>
+          </div>
+
+          {/* Upload Documents Mode */}
+          {uploadMode === "documents" && (
+            <div className="space-y-4">
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                  isDragActive
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-primary/50"
+                }`}
+              >
+                <input {...getInputProps()} />
+                <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                {isDragActive ? (
+                  <p className="text-lg font-medium">Drop files here...</p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium">
+                      Drag & drop files here, or click to select
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Supports: PDF, DOC, DOCX, TXT, MD
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Metadata Input */}
+              <div>
+                <Label htmlFor="metadata" className="text-sm font-medium">
+                  Optional Metadata (JSON)
+                </Label>
+                <Textarea
+                  id="metadata"
+                  value={uploadMetadata}
+                  onChange={(e) => setUploadMetadata(e.target.value)}
+                  placeholder='{"author": "John Doe", "category": "technical", "project": "Q3-2025"}'
+                  className="mt-2"
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add custom metadata as JSON. This will be attached to all uploaded files.
+                </p>
+              </div>
+
+              {/* Upload Progress */}
+              {uploadFiles.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Upload Progress</h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploadFiles([])}
+                      className="text-xs"
+                    >
+                      Clear List
+                    </Button>
+                  </div>
+                  {uploadFiles.map((upload, uploadIndex) => (
+                    <div key={uploadIndex} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="truncate">{upload.file.name}</span>
+                        <span
+                          className={
+                            upload.status === "success"
+                              ? "text-green-600"
+                              : upload.status === "error"
+                              ? "text-red-600"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {upload.status === "success"
+                            ? "Complete"
+                            : upload.status === "error"
+                            ? "Failed"
+                            : `${Math.round(upload.progress)}%`}
+                        </span>
+                      </div>
+                      <Progress value={upload.progress} className="h-2" />
+                      {upload.message && (
+                        <p className="text-xs text-red-600">{upload.message}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Upload Text as Markdown Mode */}
+          {uploadMode === "markdown" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="textUploadFilename">Filename</Label>
+                <Input
+                  id="textUploadFilename"
+                  value={textUploadFilename}
+                  onChange={(e) => setTextUploadFilename(e.target.value)}
+                  placeholder="document-name (will be saved as .md)"
+                  disabled={isUploadingText}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter a filename without extension - it will be saved as .md
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="textUpload">Text Content</Label>
+                <Textarea
+                  id="textUpload"
+                  value={textUpload}
+                  onChange={(e) => setTextUpload(e.target.value)}
+                  placeholder="Paste your text content here... This will be converted to a markdown file and uploaded to your knowledge base."
+                  rows={8}
+                  disabled={isUploadingText}
+                  className="resize-none"
+                />
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-muted-foreground">
+                    {textUpload.length} characters
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Will use metadata from above if provided
+                  </p>
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleTextUpload}
+                disabled={isUploadingText || !textUpload.trim() || !textUploadFilename.trim()}
+                className="w-full"
+              >
+                {isUploadingText ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Upload Text as Markdown
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Document Confirmation */}
       <ConfirmationDialog
