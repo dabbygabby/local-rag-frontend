@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAppRun extends Document {
-  appId: mongoose.Types.ObjectId;
+  appId: string;
   question?: string;
   answer: string;
   sourceDocuments: any[];
@@ -11,8 +11,7 @@ export interface IAppRun extends Document {
 const AppRunSchema = new Schema<IAppRun>(
   {
     appId: {
-      type: Schema.Types.ObjectId,
-      ref: "App",
+      type: String,
       required: true,
     },
     question: {

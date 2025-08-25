@@ -18,7 +18,6 @@ export default async function handler(
 
       const [apps, total] = await Promise.all([
         App.find({})
-          .populate("knowledgeBaseId", "name")
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limitNum)
@@ -30,7 +29,6 @@ export default async function handler(
         apps: apps.map(app => ({
           ...app,
           _id: app._id.toString(),
-          knowledgeBaseId: app.knowledgeBaseId._id.toString(),
         })),
         total,
         page: pageNum,

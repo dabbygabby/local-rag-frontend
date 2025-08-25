@@ -34,7 +34,6 @@ export default async function handler(
         runs: runs.map(run => ({
           ...run,
           _id: run._id.toString(),
-          appId: run.appId.toString(),
         })),
         total,
       });

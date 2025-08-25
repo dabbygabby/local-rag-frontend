@@ -17,19 +17,16 @@ export default async function handler(
 
   if (req.method === "GET") {
     try {
-      const app = await App.findById(id)
-        .populate("knowledgeBaseId", "name")
-        .lean();
+      const app = await App.findById(id).lean();
 
       if (!app) {
         return res.status(404).json({ error: "App not found" });
       }
 
-      res.status(200).json({
-        ...app,
-        _id: app._id.toString(),
-        knowledgeBaseId: app.knowledgeBaseId._id.toString(),
-      });
+              res.status(200).json({
+          ...app,
+          _id: app._id.toString(),
+        });
     } catch (error) {
       console.error("Error fetching app:", error);
       res.status(500).json({ error: "Failed to fetch app" });
@@ -42,19 +39,16 @@ export default async function handler(
         id,
         { $set: updateData },
         { new: true, runValidators: true }
-      )
-        .populate("knowledgeBaseId", "name")
-        .lean();
+      ).lean();
 
       if (!updatedApp) {
         return res.status(404).json({ error: "App not found" });
       }
 
-      res.status(200).json({
-        ...updatedApp,
-        _id: updatedApp._id.toString(),
-        knowledgeBaseId: updatedApp.knowledgeBaseId._id.toString(),
-      });
+              res.status(200).json({
+          ...updatedApp,
+          _id: updatedApp._id.toString(),
+        });
     } catch (error) {
       console.error("Error updating app:", error);
       res.status(500).json({ error: "Failed to update app" });

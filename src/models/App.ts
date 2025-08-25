@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IApp extends Document {
   name: string;
   description?: string;
-  knowledgeBaseId: mongoose.Types.ObjectId;
+  knowledgeBaseId: string;
   systemPrompt: string;
   retrievalSettings: Record<string, any>;
   generationSettings: Record<string, any>;
@@ -23,8 +23,7 @@ const AppSchema = new Schema<IApp>(
       trim: true,
     },
     knowledgeBaseId: {
-      type: Schema.Types.ObjectId,
-      ref: "VectorStore",
+      type: String,
       required: true,
     },
     systemPrompt: {

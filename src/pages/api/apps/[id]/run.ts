@@ -55,7 +55,7 @@ export default async function handler(
       include_sources: finalGenerationSettings.include_sources || true,
       include_confidence: finalGenerationSettings.include_confidence || false,
       query_expansion: finalRetrievalSettings.query_expansion || false,
-      vector_stores: [app.knowledgeBaseId.toString()],
+      vector_stores: [app.knowledgeBaseId],
       metadata_filters: {},
     };
 
@@ -64,7 +64,7 @@ export default async function handler(
 
     // Create an AppRun document to record this execution
     const appRun = new AppRun({
-      appId: app._id,
+      appId: app._id.toString(),
       question: question || undefined,
       answer: queryResponse.response,
       sourceDocuments: queryResponse.sources,
