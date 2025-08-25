@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Settings, FileText, Copy, Check } from "lucide-react";
+import { Search, Settings, FileText, Copy, Check, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +44,10 @@ export default function QueryPlayground() {
   
   // Copy functionality state
   const [isCopied, setIsCopied] = useState(false);
+  
+  // PDF download functionality state
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Fetch available vector stores for the dropdown
   const {
@@ -100,6 +106,91 @@ export default function QueryPlayground() {
       setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy text:", error);
+    }
+  };
+
+  // Download answer as PDF
+  const handleDownloadPDF = async () => {
+    if (!queryResult?.response || !contentRef.current) return;
+    
+    setIsDownloadingPDF(true);
+    try {
+      // Create a temporary container with white background for better PDF appearance
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '800px';
+      tempContainer.style.padding = '40px';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.color = '#000000';
+      tempContainer.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+      tempContainer.innerHTML = contentRef.current.innerHTML;
+      
+      // Style tables for PDF
+      const tables = tempContainer.querySelectorAll('table');
+      tables.forEach(table => {
+        table.style.borderCollapse = 'collapse';
+        table.style.width = '100%';
+        table.style.marginBottom = '20px';
+      });
+      
+      const cells = tempContainer.querySelectorAll('th, td');
+      cells.forEach(cell => {
+        (cell as HTMLElement).style.border = '1px solid #000';
+        (cell as HTMLElement).style.padding = '8px';
+        (cell as HTMLElement).style.fontSize = '12px';
+      });
+      
+      const headers = tempContainer.querySelectorAll('th');
+      headers.forEach(header => {
+        (header as HTMLElement).style.backgroundColor = '#f5f5f5';
+        (header as HTMLElement).style.fontWeight = 'bold';
+      });
+      
+      document.body.appendChild(tempContainer);
+      
+      // Generate canvas from the temporary container
+      const canvas = await html2canvas(tempContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      // Remove temporary container
+      document.body.removeChild(tempContainer);
+      
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      // Add additional pages if content is longer than one page
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Download the PDF
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      pdf.save(`rag-answer-${timestamp}.pdf`);
+      
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+    } finally {
+      setIsDownloadingPDF(false);
     }
   };
 
@@ -421,28 +512,49 @@ export default function QueryPlayground() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">Answer</CardTitle>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCopyAnswer}
-                          className="flex items-center gap-2"
-                        >
-                          {isCopied ? (
-                            <>
-                              <Check className="h-4 w-4 text-green-600" />
-                              <span className="text-green-600">Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-4 w-4" />
-                              Copy
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCopyAnswer}
+                            className="flex items-center gap-2"
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check className="h-4 w-4 text-green-600" />
+                                <span className="text-green-600">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4" />
+                                Copy
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDownloadPDF}
+                            disabled={isDownloadingPDF}
+                            className="flex items-center gap-2"
+                          >
+                            {isDownloadingPDF ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                <span>Generating...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4" />
+                                PDF
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <div ref={contentRef} className="prose prose-sm max-w-none dark:prose-invert">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
