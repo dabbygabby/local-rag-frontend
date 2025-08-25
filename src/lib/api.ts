@@ -190,7 +190,7 @@ export const documentApi = {
   
   // Delete a document
   delete: (storeId: string, documentId: string): Promise<void> =>
-    apiCall(`/vector-stores/${storeId}/documents/${documentId}`, { 
+    apiCall(`/documents/${documentId}`, { 
       method: "DELETE" 
     }),
 };

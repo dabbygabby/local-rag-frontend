@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -46,7 +46,6 @@ export default function StoreDetailPage() {
   const { toast } = useToast();
 
   // Component state
-  const [activeTab, setActiveTab] = useState("overview");
   const [isUpdating, setIsUpdating] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<FileUploadStatus[]>([]);
   const [deleteDocument, setDeleteDocument] = useState<{ id: string; name: string } | null>(null);
@@ -375,15 +374,8 @@ export default function StoreDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview & Settings</TabsTrigger>
-          <TabsTrigger value="documents">Document Management</TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+      {/* Main Content */}
+      <div className="space-y-6">
           {/* Action Buttons */}
           <div className="flex justify-end space-x-2 mb-4">
             <Button variant="outline" onClick={() => setShowUpdateModal(true)}>
@@ -394,99 +386,6 @@ export default function StoreDetailPage() {
             </Button>
           </div>
 
-          {/* Overview Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Store Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Store Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Store ID</Label>
-                    <p className="text-sm text-muted-foreground">{store.store_id}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Status</Label>
-                    <Badge className="mt-1">{store.status}</Badge>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Created</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(store.created_at)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Last Updated</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(store.updated_at)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Total Documents</Label>
-                    <p className="text-2xl font-bold">{store.stats.total_documents}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Total Chunks</Label>
-                    <p className="text-2xl font-bold">{store.stats.total_chunks}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Index Size</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {formatFileSize(store.stats.index_size)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Last Indexed</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(store.stats.last_updated)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Chunk Size</Label>
-                  <p className="text-sm text-muted-foreground">{store.config.chunk_size}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Chunk Overlap</Label>
-                  <p className="text-sm text-muted-foreground">{store.config.chunk_overlap}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Embedding Model</Label>
-                  <p className="text-sm text-muted-foreground">{store.config.embedding_model}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-
-        </TabsContent>
-
-        {/* Documents Tab */}
-        <TabsContent value="documents" className="space-y-6">
           {/* File Upload */}
           <Card>
             <CardHeader>
@@ -580,64 +479,91 @@ export default function StoreDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Text Upload */}
+          {/* Overview Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Store Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Store Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Store ID</Label>
+                    <p className="text-sm text-muted-foreground">{store.store_id}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Status</Label>
+                    <Badge className="mt-1">{store.status}</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Created</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(store.created_at)}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Last Updated</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(store.updated_at)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Statistics */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Statistics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Total Documents</Label>
+                    <p className="text-2xl font-bold">{store.stats.total_documents}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Total Chunks</Label>
+                    <p className="text-2xl font-bold">{store.stats.total_chunks}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Index Size</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formatFileSize(store.stats.index_size)}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Last Indexed</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(store.stats.last_updated)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Configuration */}
           <Card>
             <CardHeader>
-              <CardTitle>Upload Text as Markdown</CardTitle>
+              <CardTitle>Configuration</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="textUploadFilename">Filename</Label>
-                <Input
-                  id="textUploadFilename"
-                  value={textUploadFilename}
-                  onChange={(e) => setTextUploadFilename(e.target.value)}
-                  placeholder="document-name (will be saved as .md)"
-                  disabled={isUploadingText}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Enter a filename without extension - it will be saved as .md
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="textUpload">Text Content</Label>
-                <Textarea
-                  id="textUpload"
-                  value={textUpload}
-                  onChange={(e) => setTextUpload(e.target.value)}
-                  placeholder="Paste your text content here... This will be converted to a markdown file and uploaded to your knowledge base."
-                  rows={8}
-                  disabled={isUploadingText}
-                  className="resize-none"
-                />
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-muted-foreground">
-                    {textUpload.length} characters
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Will use metadata from above if provided
-                  </p>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Chunk Size</Label>
+                  <p className="text-sm text-muted-foreground">{store.config.chunk_size}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Chunk Overlap</Label>
+                  <p className="text-sm text-muted-foreground">{store.config.chunk_overlap}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Embedding Model</Label>
+                  <p className="text-sm text-muted-foreground">{store.config.embedding_model}</p>
                 </div>
               </div>
-
-              <Button 
-                onClick={handleTextUpload}
-                disabled={isUploadingText || !textUpload.trim() || !textUploadFilename.trim()}
-                className="w-full"
-              >
-                {isUploadingText ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Upload Text as Markdown
-                  </>
-                )}
-              </Button>
             </CardContent>
           </Card>
 
@@ -719,8 +645,7 @@ export default function StoreDetailPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
 
       {/* Update Settings Modal */}
       <Dialog open={showUpdateModal} onOpenChange={setShowUpdateModal}>
