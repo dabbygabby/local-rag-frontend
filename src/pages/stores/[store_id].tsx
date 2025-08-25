@@ -5,13 +5,10 @@ import { useForm } from "react-hook-form";
 import { useDropzone } from "react-dropzone";
 import {
   ArrowLeft,
-  Database,
-  Settings,
   Upload,
   FileText,
   MoreHorizontal,
   Trash2,
-  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +37,7 @@ import {
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { useToast } from "@/hooks/use-toast";
 import { vectorStoreApi, documentApi, formatFileSize } from "@/lib/api";
-import { VectorStore, UpdateVectorStoreRequest, FileUploadStatus } from "@/types/api";
+import { UpdateVectorStoreRequest, FileUploadStatus } from "@/types/api";
 
 export default function StoreDetailPage() {
   const router = useRouter();
@@ -111,14 +108,14 @@ export default function StoreDetailPage() {
     setUploadFiles((prev) => [...prev, ...newUploads]);
 
     // Upload each file
-    acceptedFiles.forEach(async (file, index) => {
+    acceptedFiles.forEach(async (file) => {
       try {
         await documentApi.uploadWithProgress(
           store_id as string,
           file,
           (progress) => {
             setUploadFiles((prev) =>
-              prev.map((upload, i) =>
+              prev.map((upload) =>
                 upload.file === file ? { ...upload, progress } : upload
               )
             );
@@ -494,8 +491,8 @@ export default function StoreDetailPage() {
               {uploadFiles.length > 0 && (
                 <div className="mt-6 space-y-3">
                   <h4 className="font-medium">Upload Progress</h4>
-                  {uploadFiles.map((upload, index) => (
-                    <div key={index} className="space-y-2">
+                  {uploadFiles.map((upload, uploadIndex) => (
+                    <div key={uploadIndex} className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="truncate">{upload.file.name}</span>
                         <span
@@ -532,10 +529,10 @@ export default function StoreDetailPage() {
             </CardHeader>
             <CardContent>
               {documentsLoading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
+                          <div className="space-y-4">
+            {[...Array(3)].map((_, index) => (
+              <Skeleton key={index} className="h-16 w-full" />
+            ))}
                 </div>
               ) : documentsError ? (
                 <Alert variant="destructive">

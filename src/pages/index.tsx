@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Database, FileText, Hash, Clock, CheckCircle } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
@@ -49,7 +49,7 @@ export default function Dashboard() {
       setShowRebuildConfirm(false);
       // Refetch stats after a short delay to show updated data
       setTimeout(() => refetchStats(), 2000);
-    } catch (error) {
+    } catch {
       toast({
         title: "❌ Failed to start index rebuild",
         description: "Please try again later.",
@@ -60,8 +60,7 @@ export default function Dashboard() {
     }
   };
 
-  const isLoading = healthLoading || statsLoading;
-  const hasError = healthError || statsError;
+
 
   return (
     <div className="space-y-6">
@@ -69,7 +68,7 @@ export default function Dashboard() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">RAG System Dashboard</h1>
         <p className="text-muted-foreground">
-          Monitor your RAG system's health and performance in real-time.
+          Monitor your RAG system&apos;s health and performance in real-time.
         </p>
       </div>
 

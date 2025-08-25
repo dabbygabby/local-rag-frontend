@@ -9,7 +9,6 @@ import {
   QueryRequest,
   QueryResponse,
   RebuildIndexResponse,
-  ApiResponse,
 } from "@/types/api";
 
 const API_BASE_URL = "http://localhost:8000";
@@ -119,8 +118,8 @@ export const documentApi = {
           try {
             const response = JSON.parse(xhr.responseText);
             resolve(response);
-          } catch (error) {
-            reject(new Error("Failed to parse response"));
+                  } catch {
+          reject(new Error("Failed to parse response"));
           }
         } else {
           reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));

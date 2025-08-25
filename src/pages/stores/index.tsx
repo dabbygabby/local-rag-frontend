@@ -30,7 +30,7 @@ import { VectorStore } from "@/types/api";
 export default function KnowledgeBasesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deleteStore, setDeleteStore] = useState<VectorStore | null>(null);
-  const [isDeletingStore, setIsDeletingStore] = useState(false);
+
   const router = useRouter();
   const { toast } = useToast();
 
@@ -49,7 +49,6 @@ export default function KnowledgeBasesPage() {
   const handleDeleteStore = async () => {
     if (!deleteStore) return;
 
-    setIsDeletingStore(true);
     try {
       await vectorStoreApi.delete(deleteStore.store_id);
       toast({
@@ -64,8 +63,6 @@ export default function KnowledgeBasesPage() {
         description: error instanceof Error ? error.message : "Please try again later.",
         variant: "destructive",
       });
-    } finally {
-      setIsDeletingStore(false);
     }
   };
 

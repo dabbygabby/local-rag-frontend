@@ -66,7 +66,7 @@ export interface UpdateVectorStoreRequest {
 // Document Types
 export interface DocumentMetadata {
   tags?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Document {
@@ -90,7 +90,7 @@ export interface QueryRequest {
   max_tokens: number;
   include_sources: boolean;
   query_expansion: boolean;
-  metadata_filters?: Record<string, any>;
+  metadata_filters?: Record<string, unknown>;
 }
 
 export interface SourceDocument {

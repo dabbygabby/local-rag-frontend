@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Settings, FileText, DollarSign, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { SourceDocumentCard } from "@/components/SourceDocumentCard";
 import { vectorStoreApi, queryApi } from "@/lib/api";
 import { QueryRequest, QueryResponse } from "@/types/api";
@@ -323,7 +322,7 @@ export default function QueryPlayground() {
                       Your results will appear here
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Configure your query and click "Generate Answer" to get started
+                      Configure your query and click &quot;Generate Answer&quot; to get started
                     </p>
                   </div>
                 </div>
