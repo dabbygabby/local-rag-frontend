@@ -72,11 +72,14 @@ export interface DocumentMetadata {
 
 export interface Document {
   document_id: string;
+  store_id: string;
   filename: string;
   file_type: string;
   file_size: number;
   total_chunks: number;
   upload_timestamp: string;
+  processed_timestamp: string;
+  content_hash: string;
   metadata?: DocumentMetadata;
 }
 

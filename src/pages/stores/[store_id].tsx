@@ -49,6 +49,7 @@ export default function StoreDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<FileUploadStatus[]>([]);
   const [deleteDocument, setDeleteDocument] = useState<{ id: string; name: string } | null>(null);
+  const [uploadMetadata, setUploadMetadata] = useState("");
 
   // Fetch store data
   const {
@@ -107,6 +108,20 @@ export default function StoreDetailPage() {
 
     setUploadFiles((prev) => [...prev, ...newUploads]);
 
+    // Parse metadata if provided
+    let parsedMetadata: Record<string, unknown> | undefined;
+    try {
+      if (uploadMetadata.trim()) {
+        parsedMetadata = JSON.parse(uploadMetadata);
+      }
+    } catch {
+      toast({
+        title: "❌ Invalid metadata",
+        description: "Metadata must be valid JSON. Upload will proceed without metadata.",
+        variant: "destructive",
+      });
+    }
+
     // Upload each file
     acceptedFiles.forEach(async (file) => {
       try {
@@ -119,7 +134,8 @@ export default function StoreDetailPage() {
                 upload.file === file ? { ...upload, progress } : upload
               )
             );
-          }
+          },
+          parsedMetadata
         );
 
         // Mark as successful
@@ -153,7 +169,7 @@ export default function StoreDetailPage() {
 
         toast({
           title: "❌ Upload failed",
-          description: `Failed to upload ${file.name}`,
+          description: `Failed to upload ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
           variant: "destructive",
         });
       }
@@ -263,8 +279,7 @@ export default function StoreDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => router.push("/stores")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Knowledge Bases
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{store.name}</h1>
@@ -487,10 +502,38 @@ export default function StoreDetailPage() {
                 )}
               </div>
 
+              {/* Metadata Input */}
+              <div className="mt-4">
+                <Label htmlFor="metadata" className="text-sm font-medium">
+                  Optional Metadata (JSON)
+                </Label>
+                <Textarea
+                  id="metadata"
+                  value={uploadMetadata}
+                  onChange={(e) => setUploadMetadata(e.target.value)}
+                  placeholder='{"author": "John Doe", "category": "technical", "project": "Q3-2025"}'
+                  className="mt-2"
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add custom metadata as JSON. This will be attached to all uploaded files.
+                </p>
+              </div>
+
               {/* Upload Progress */}
               {uploadFiles.length > 0 && (
                 <div className="mt-6 space-y-3">
-                  <h4 className="font-medium">Upload Progress</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Upload Progress</h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploadFiles([])}
+                      className="text-xs"
+                    >
+                      Clear List
+                    </Button>
+                  </div>
                   {uploadFiles.map((upload, uploadIndex) => (
                     <div key={uploadIndex} className="space-y-2">
                       <div className="flex items-center justify-between text-sm">

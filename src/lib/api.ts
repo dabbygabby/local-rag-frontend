@@ -11,7 +11,7 @@ import {
   RebuildIndexResponse,
 } from "@/types/api";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://localhost:8000/api";
 
 // Generic API call function with error handling
 async function apiCall<T>(
@@ -20,16 +20,29 @@ async function apiCall<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Don't set Content-Type for FormData, let browser handle it
+  const isFormData = options.body instanceof FormData;
+  const headers = isFormData 
+    ? { ...options.headers }
+    : {
+        "Content-Type": "application/json",
+        ...options.headers,
+      };
+  
   const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
     ...options,
   });
 
   if (!response.ok) {
-    throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+    // Try to parse error response for better error messages
+    try {
+      const errorResponse = await response.json();
+      throw new Error(errorResponse.detail || `API call failed: ${response.status} ${response.statusText}`);
+    } catch (parseError) {
+      // If we can't parse the error response, throw generic error
+      throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+    }
   }
 
   return response.json();
@@ -52,43 +65,48 @@ export const indexApi = {
 // Vector Store APIs
 export const vectorStoreApi = {
   // Get all vector stores
-  getAll: (): Promise<VectorStore[]> => apiCall("/vector-stores"),
+  getAll: (): Promise<VectorStore[]> => apiCall("/vectorstores"),
   
   // Get a specific vector store
   getById: (storeId: string): Promise<VectorStore> => 
-    apiCall(`/vector-stores/${storeId}`),
+    apiCall(`/vectorstores/${storeId}`),
   
   // Create a new vector store
   create: (data: CreateVectorStoreRequest): Promise<VectorStore> =>
-    apiCall("/vector-stores", {
+    apiCall("/vectorstores", {
       method: "POST",
       body: JSON.stringify(data),
     }),
   
   // Update a vector store
   update: (storeId: string, data: UpdateVectorStoreRequest): Promise<VectorStore> =>
-    apiCall(`/vector-stores/${storeId}`, {
+    apiCall(`/vectorstores/${storeId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
   
   // Delete a vector store
   delete: (storeId: string): Promise<void> =>
-    apiCall(`/vector-stores/${storeId}`, { method: "DELETE" }),
+    apiCall(`/vectorstores/${storeId}`, { method: "DELETE" }),
 };
 
 // Document APIs
 export const documentApi = {
   // Get all documents for a vector store
   getByStoreId: (storeId: string): Promise<Document[]> =>
-    apiCall(`/vector-stores/${storeId}/documents`),
+    apiCall(`/vectorstores/${storeId}/documents`),
   
   // Upload a document to a vector store
-  upload: (storeId: string, file: File): Promise<Document> => {
+  upload: (storeId: string, file: File, metadata?: Record<string, unknown>): Promise<Document> => {
     const formData = new FormData();
     formData.append("file", file);
     
-    return apiCall(`/vector-stores/${storeId}/documents`, {
+    // Add optional metadata as JSON string
+    if (metadata && Object.keys(metadata).length > 0) {
+      formData.append("metadata", JSON.stringify(metadata));
+    }
+    
+    return apiCall(`/vectorstores/${storeId}/documents`, {
       method: "POST",
       headers: {}, // Don't set Content-Type for FormData, let browser set it
       body: formData,
@@ -99,12 +117,18 @@ export const documentApi = {
   uploadWithProgress: (
     storeId: string, 
     file: File, 
-    onProgress: (progress: number) => void
+    onProgress: (progress: number) => void,
+    metadata?: Record<string, unknown>
   ): Promise<Document> => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
       formData.append("file", file);
+      
+      // Add optional metadata as JSON string
+      if (metadata && Object.keys(metadata).length > 0) {
+        formData.append("metadata", JSON.stringify(metadata));
+      }
 
       xhr.upload.addEventListener("progress", (event) => {
         if (event.lengthComputable) {
@@ -114,30 +138,36 @@ export const documentApi = {
       });
 
       xhr.addEventListener("load", () => {
-        if (xhr.status === 200) {
+        if (xhr.status === 201) { // Backend returns 201 Created for successful uploads
           try {
             const response = JSON.parse(xhr.responseText);
             resolve(response);
-                  } catch {
-          reject(new Error("Failed to parse response"));
+          } catch {
+            reject(new Error("Failed to parse response"));
           }
         } else {
-          reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+          // Try to parse error response for better error messages
+          try {
+            const errorResponse = JSON.parse(xhr.responseText);
+            reject(new Error(errorResponse.detail || `Upload failed: ${xhr.status} ${xhr.statusText}`));
+          } catch {
+            reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+          }
         }
       });
 
       xhr.addEventListener("error", () => {
-        reject(new Error("Upload failed"));
+        reject(new Error("Upload failed - network error"));
       });
 
-      xhr.open("POST", `${API_BASE_URL}/vector-stores/${storeId}/documents`);
+      xhr.open("POST", `${API_BASE_URL}/vectorstores/${storeId}/documents`);
       xhr.send(formData);
     });
   },
   
-  // Delete a document (if supported by API)
+  // Delete a document
   delete: (storeId: string, documentId: string): Promise<void> =>
-    apiCall(`/vector-stores/${storeId}/documents/${documentId}`, { 
+    apiCall(`/vectorstores/${storeId}/documents/${documentId}`, { 
       method: "DELETE" 
     }),
 };
