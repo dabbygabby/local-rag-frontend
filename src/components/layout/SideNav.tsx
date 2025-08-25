@@ -1,26 +1,25 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Home, Users, BarChart2 } from "lucide-react";
+import { Home, Search, Database, BarChart2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the nav items outside the component so they can be reused
 const navItems = [
   {
     href: "/",
-    label: "Home",
+    label: "Dashboard",
     icon: Home,
   },
   {
-    href: "/agents",
-    label: "Agents",
-    icon: BarChart2,
+    href: "/query",
+    label: "Query Playground",
+    icon: Search,
   },
   {
-    href: "/workflows",
-    label: "Workflows",
-    icon: Users,
+    href: "/stores",
+    label: "Knowledge Bases",
+    icon: Database,
   },
-
 ];
 
 // Create a NavItems component to avoid duplication
