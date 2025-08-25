@@ -50,6 +50,9 @@ export default function StoreDetailPage() {
   const [uploadFiles, setUploadFiles] = useState<FileUploadStatus[]>([]);
   const [deleteDocument, setDeleteDocument] = useState<{ id: string; name: string } | null>(null);
   const [uploadMetadata, setUploadMetadata] = useState("");
+  const [textUpload, setTextUpload] = useState("");
+  const [textUploadFilename, setTextUploadFilename] = useState("");
+  const [isUploadingText, setIsUploadingText] = useState(false);
 
   // Fetch store data
   const {
@@ -227,6 +230,78 @@ export default function StoreDetailPage() {
         description: error instanceof Error ? error.message : "Please try again later.",
         variant: "destructive",
       });
+    }
+  };
+
+  // Convert text to File object for upload
+  const createFileFromText = (text: string, filename: string): File => {
+    const blob = new Blob([text], { type: "text/markdown" });
+    const finalFilename = filename.endsWith(".md") ? filename : `${filename}.md`;
+    return new File([blob], finalFilename, { type: "text/markdown" });
+  };
+
+  // Handle text upload
+  const handleTextUpload = async () => {
+    if (!textUpload.trim()) {
+      toast({
+        title: "❌ No text provided",
+        description: "Please enter some text to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!textUploadFilename.trim()) {
+      toast({
+        title: "❌ No filename provided",
+        description: "Please enter a filename for the text document.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingText(true);
+
+    try {
+      // Parse metadata if provided
+      let parsedMetadata: Record<string, unknown> | undefined;
+      try {
+        if (uploadMetadata.trim()) {
+          parsedMetadata = JSON.parse(uploadMetadata);
+        }
+      } catch {
+        toast({
+          title: "❌ Invalid metadata",
+          description: "Metadata must be valid JSON. Upload will proceed without metadata.",
+          variant: "destructive",
+        });
+      }
+
+      // Create file from text
+      const file = createFileFromText(textUpload, textUploadFilename);
+
+      // Upload the text as a markdown file
+      await uploadDocument(store_id as string, file, parsedMetadata);
+
+      toast({
+        title: "✅ Text uploaded successfully",
+        description: `${file.name} has been processed and indexed.`,
+      });
+
+      // Clear the text input
+      setTextUpload("");
+      setTextUploadFilename("");
+      
+      // Refresh documents list
+      refetchDocuments();
+    } catch (error) {
+      toast({
+        title: "❌ Text upload failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingText(false);
     }
   };
 
@@ -562,6 +637,67 @@ export default function StoreDetailPage() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Text Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Text as Markdown</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="textUploadFilename">Filename</Label>
+                <Input
+                  id="textUploadFilename"
+                  value={textUploadFilename}
+                  onChange={(e) => setTextUploadFilename(e.target.value)}
+                  placeholder="document-name (will be saved as .md)"
+                  disabled={isUploadingText}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter a filename without extension - it will be saved as .md
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="textUpload">Text Content</Label>
+                <Textarea
+                  id="textUpload"
+                  value={textUpload}
+                  onChange={(e) => setTextUpload(e.target.value)}
+                  placeholder="Paste your text content here... This will be converted to a markdown file and uploaded to your knowledge base."
+                  rows={8}
+                  disabled={isUploadingText}
+                  className="resize-none"
+                />
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-muted-foreground">
+                    {textUpload.length} characters
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Will use metadata from above if provided
+                  </p>
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleTextUpload}
+                disabled={isUploadingText || !textUpload.trim() || !textUploadFilename.trim()}
+                className="w-full"
+              >
+                {isUploadingText ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Upload Text as Markdown
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
