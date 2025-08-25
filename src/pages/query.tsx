@@ -466,19 +466,36 @@ export default function QueryPlayground() {
                               <blockquote className="border-l-4 border-muted pl-4 italic mb-4">{children}</blockquote>
                             ),
                             table: ({ children }) => (
-                              <div className="overflow-x-auto mb-4">
-                                <table className="min-w-full border-collapse border border-border">
+                              <div className="overflow-x-auto mb-6 rounded-lg border border-border">
+                                <table className="min-w-full divide-y divide-border">
                                   {children}
                                 </table>
                               </div>
                             ),
+                            thead: ({ children }) => (
+                              <thead className="bg-muted/50">
+                                {children}
+                              </thead>
+                            ),
+                            tbody: ({ children }) => (
+                              <tbody className="divide-y divide-border bg-background">
+                                {children}
+                              </tbody>
+                            ),
+                            tr: ({ children }) => (
+                              <tr className="hover:bg-muted/20 transition-colors">
+                                {children}
+                              </tr>
+                            ),
                             th: ({ children }) => (
-                              <th className="border border-border px-4 py-2 bg-muted font-semibold text-left">
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wider border-r border-border last:border-r-0">
                                 {children}
                               </th>
                             ),
                             td: ({ children }) => (
-                              <td className="border border-border px-4 py-2">{children}</td>
+                              <td className="px-6 py-4 text-sm text-foreground border-r border-border last:border-r-0 whitespace-nowrap">
+                                {children}
+                              </td>
                             ),
                           }}
                         >
