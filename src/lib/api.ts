@@ -91,7 +91,7 @@ export const vectorStoreApi = {
 };
 
 /** ------------------------------------------------------------------
- * Upload a single document (or multiple files) to a vector‑store.
+ * Upload a single document to a vector‑store.
  *
  * @param storeId   The UUID of the vector store.
  * @param file      The File object to upload.
@@ -99,6 +99,8 @@ export const vectorStoreApi = {
  * @param onProgress(Optional) callback receiving a number 0‑100 (percentage).
  *
  * @returns        A Promise that resolves to the created Document.
+ * 
+ * Note: Backend expects FormData with "files" field (not "file") and optional "metadata" field.
  * ------------------------------------------------------------------- */
 export const uploadDocument = (
   storeId: string,
@@ -108,7 +110,7 @@ export const uploadDocument = (
 ): Promise<Document> => {
   // Build FormData exactly as the backend expects
   const form = new FormData();
-  form.append('file', file);               // required
+  form.append('files', file);               // required
   if (metadata && Object.keys(metadata).length) {
     form.append('metadata', JSON.stringify(metadata)); // optional
   }
