@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Settings, FileText, DollarSign, Clock } from "lucide-react";
+import { Search, Settings, FileText, DollarSign, Clock, Copy, Check } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +38,9 @@ export default function QueryPlayground() {
   const [isQuerying, setIsQuerying] = useState(false);
   const [queryResult, setQueryResult] = useState<QueryResponse | null>(null);
   const [queryError, setQueryError] = useState<string | null>(null);
+  
+  // Copy functionality state
+  const [isCopied, setIsCopied] = useState(false);
 
   // Fetch available vector stores for the dropdown
   const {
@@ -81,6 +85,20 @@ export default function QueryPlayground() {
       setQueryResult(null);
     } finally {
       setIsQuerying(false);
+    }
+  };
+
+  // Copy answer to clipboard
+  const handleCopyAnswer = async () => {
+    if (!queryResult?.response) return;
+    
+    try {
+      await navigator.clipboard.writeText(queryResult.response);
+      setIsCopied(true);
+      // Reset the copied state after 2 seconds
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy text:", error);
     }
   };
 
@@ -400,12 +418,73 @@ export default function QueryPlayground() {
                   {/* Answer Card */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Answer</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Answer</CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCopyAnswer}
+                          className="flex items-center gap-2"
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="h-4 w-4 text-green-600" />
+                              <span className="text-green-600">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-4 w-4" />
+                              Copy
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {queryResult.response}
-                      </p>
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown
+                          components={{
+                            h1: ({ children }) => <h1 className="text-xl font-bold mb-4">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-lg font-semibold mb-3">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-base font-semibold mb-2">{children}</h3>,
+                            p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc pl-6 mb-3 space-y-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 space-y-1">{children}</ol>,
+                            li: ({ children, ...props }) => <li {...props} className="leading-relaxed">{children}</li>,
+                            code: ({ children, className }) => {
+                              const isInline = !className;
+                              return isInline ? (
+                                <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
+                              ) : (
+                                <code className="block bg-muted p-4 rounded-lg text-sm font-mono whitespace-pre-wrap overflow-x-auto">
+                                  {children}
+                                </code>
+                              );
+                            },
+                            pre: ({ children }) => <div className="mb-4">{children}</div>,
+                            blockquote: ({ children }) => (
+                              <blockquote className="border-l-4 border-muted pl-4 italic mb-4">{children}</blockquote>
+                            ),
+                            table: ({ children }) => (
+                              <div className="overflow-x-auto mb-4">
+                                <table className="min-w-full border-collapse border border-border">
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            th: ({ children }) => (
+                              <th className="border border-border px-4 py-2 bg-muted font-semibold text-left">
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="border border-border px-4 py-2">{children}</td>
+                            ),
+                          }}
+                        >
+                          {queryResult.response}
+                        </ReactMarkdown>
+                      </div>
                     </CardContent>
                   </Card>
 
