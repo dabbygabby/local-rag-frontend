@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { useToast } from "@/hooks/use-toast";
-import { vectorStoreApi, documentApi, formatFileSize } from "@/lib/api";
+import { vectorStoreApi, documentApi, uploadDocument, formatFileSize } from "@/lib/api";
 import { UpdateVectorStoreRequest, FileUploadStatus } from "@/types/api";
 
 export default function StoreDetailPage() {
@@ -125,17 +125,17 @@ export default function StoreDetailPage() {
     // Upload each file
     acceptedFiles.forEach(async (file) => {
       try {
-        await documentApi.uploadWithProgress(
+        await uploadDocument(
           store_id as string,
           file,
+          parsedMetadata,
           (progress) => {
             setUploadFiles((prev) =>
               prev.map((upload) =>
                 upload.file === file ? { ...upload, progress } : upload
               )
             );
-          },
-          parsedMetadata
+          }
         );
 
         // Mark as successful

@@ -11,7 +11,7 @@ import {
   RebuildIndexResponse,
 } from "@/types/api";
 
-const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = "http://localhost:8000";
 
 // Generic API call function with error handling
 async function apiCall<T>(
@@ -39,7 +39,7 @@ async function apiCall<T>(
     try {
       const errorResponse = await response.json();
       throw new Error(errorResponse.detail || `API call failed: ${response.status} ${response.statusText}`);
-    } catch (parseError) {
+    } catch {
       // If we can't parse the error response, throw generic error
       throw new Error(`API call failed: ${response.status} ${response.statusText}`);
     }
@@ -65,109 +65,130 @@ export const indexApi = {
 // Vector Store APIs
 export const vectorStoreApi = {
   // Get all vector stores
-  getAll: (): Promise<VectorStore[]> => apiCall("/vectorstores"),
+  getAll: (): Promise<VectorStore[]> => apiCall("/vector-stores"),
   
   // Get a specific vector store
   getById: (storeId: string): Promise<VectorStore> => 
-    apiCall(`/vectorstores/${storeId}`),
+    apiCall(`/vector-stores/${storeId}`),
   
   // Create a new vector store
   create: (data: CreateVectorStoreRequest): Promise<VectorStore> =>
-    apiCall("/vectorstores", {
+    apiCall("/vector-stores", {
       method: "POST",
       body: JSON.stringify(data),
     }),
   
   // Update a vector store
   update: (storeId: string, data: UpdateVectorStoreRequest): Promise<VectorStore> =>
-    apiCall(`/vectorstores/${storeId}`, {
+    apiCall(`/vector-stores/${storeId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
   
   // Delete a vector store
   delete: (storeId: string): Promise<void> =>
-    apiCall(`/vectorstores/${storeId}`, { method: "DELETE" }),
+    apiCall(`/vector-stores/${storeId}`, { method: "DELETE" }),
 };
 
-// Document APIs
-export const documentApi = {
-  // Get all documents for a vector store
-  getByStoreId: (storeId: string): Promise<Document[]> =>
-    apiCall(`/vectorstores/${storeId}/documents`),
-  
-  // Upload a document to a vector store
-  upload: (storeId: string, file: File, metadata?: Record<string, unknown>): Promise<Document> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    
-    // Add optional metadata as JSON string
-    if (metadata && Object.keys(metadata).length > 0) {
-      formData.append("metadata", JSON.stringify(metadata));
-    }
-    
-    return apiCall(`/vectorstores/${storeId}/documents`, {
-      method: "POST",
-      headers: {}, // Don't set Content-Type for FormData, let browser set it
-      body: formData,
-    });
-  },
-  
-  // Upload with progress tracking
-  uploadWithProgress: (
-    storeId: string, 
-    file: File, 
-    onProgress: (progress: number) => void,
-    metadata?: Record<string, unknown>
-  ): Promise<Document> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const formData = new FormData();
-      formData.append("file", file);
-      
-      // Add optional metadata as JSON string
-      if (metadata && Object.keys(metadata).length > 0) {
-        formData.append("metadata", JSON.stringify(metadata));
-      }
+/** ------------------------------------------------------------------
+ * Upload a single document (or multiple files) to a vector‑store.
+ *
+ * @param storeId   The UUID of the vector store.
+ * @param file      The File object to upload.
+ * @param metadata  Optional free‑form metadata that will be stored with the document.
+ * @param onProgress(Optional) callback receiving a number 0‑100 (percentage).
+ *
+ * @returns        A Promise that resolves to the created Document.
+ * ------------------------------------------------------------------- */
+export const uploadDocument = (
+  storeId: string,
+  file: File,
+  metadata?: Record<string, unknown>,
+  onProgress?: (pct: number) => void
+): Promise<Document> => {
+  // Build FormData exactly as the backend expects
+  const form = new FormData();
+  form.append('file', file);               // required
+  if (metadata && Object.keys(metadata).length) {
+    form.append('metadata', JSON.stringify(metadata)); // optional
+  }
 
-      xhr.upload.addEventListener("progress", (event) => {
-        if (event.lengthComputable) {
-          const progress = (event.loaded / event.total) * 100;
-          onProgress(progress);
+  // If the caller wants progress we fall back to XHR,
+  // otherwise we can use the simpler fetch API.
+  if (onProgress) {
+    return new Promise<Document>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      // Progress events
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const pct = (e.loaded / e.total) * 100;
+          onProgress(pct);
         }
       });
 
-      xhr.addEventListener("load", () => {
-        if (xhr.status === 201) { // Backend returns 201 Created for successful uploads
+      // Success / error handling
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 201) {
           try {
-            const response = JSON.parse(xhr.responseText);
-            resolve(response);
+            const doc: Document = JSON.parse(xhr.responseText);
+            resolve(doc);
           } catch {
-            reject(new Error("Failed to parse response"));
+            reject(new Error('Failed to parse successful upload response'));
           }
         } else {
-          // Try to parse error response for better error messages
+          // Try to surface the backend error message
           try {
-            const errorResponse = JSON.parse(xhr.responseText);
-            reject(new Error(errorResponse.detail || `Upload failed: ${xhr.status} ${xhr.statusText}`));
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.detail ?? `Upload failed: ${xhr.status}`));
           } catch {
             reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
           }
         }
       });
 
-      xhr.addEventListener("error", () => {
-        reject(new Error("Upload failed - network error"));
+      xhr.addEventListener('error', () => {
+        reject(new Error('Upload failed – network error'));
       });
 
-      xhr.open("POST", `${API_BASE_URL}/vectorstores/${storeId}/documents`);
-      xhr.send(formData);
+      // NOTE: Do NOT set Content‑Type – the browser will add the multipart boundary.
+      xhr.open('POST', `${API_BASE_URL}/vector-stores/${storeId}/documents`);
+      xhr.send(form);
     });
-  },
+  }
+
+  // ---- fetch version (no progress) ---------------------------------
+  return fetch(`${API_BASE_URL}/vector-stores/${storeId}/documents`, {
+    method: 'POST',
+    body: form,               // browser adds correct headers
+  })
+    .then(async (res) => {
+      if (res.status === 201) {
+        return (await res.json()) as Document;
+      }
+      // Non‑2xx – try to extract a helpful message
+      const errBody = await res.text();
+      try {
+        const err = JSON.parse(errBody);
+        throw new Error(err.detail ?? `Upload failed: ${res.status}`);
+      } catch {
+        throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+      }
+    });
+};
+
+// Document APIs
+export const documentApi = {
+  // Get all documents for a vector store
+  getByStoreId: (storeId: string): Promise<Document[]> =>
+    apiCall(`/vector-stores/${storeId}/documents`),
+  
+  // Upload a document to a vector store with optional progress tracking
+  upload: uploadDocument,
   
   // Delete a document
   delete: (storeId: string, documentId: string): Promise<void> =>
-    apiCall(`/vectorstores/${storeId}/documents/${documentId}`, { 
+    apiCall(`/vector-stores/${storeId}/documents/${documentId}`, { 
       method: "DELETE" 
     }),
 };
