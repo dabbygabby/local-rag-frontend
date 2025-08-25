@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Home, Search, Database } from "lucide-react";
+import { Home, Search, Database, AppWindow } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the nav items outside the component so they can be reused
@@ -19,6 +19,11 @@ const navItems = [
     href: "/stores",
     label: "Knowledge Bases",
     icon: Database,
+  },
+  {
+    href: "/apps",
+    label: "Apps",
+    icon: AppWindow,
   },
 ];
 
