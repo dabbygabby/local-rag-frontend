@@ -29,6 +29,7 @@ interface FormData {
   chunk_size: number;
   chunk_overlap: number;
   embedding_model: string;
+  embedding_task: string;
 }
 
 export function CreateStoreModal({ open, onOpenChange, onSuccess }: CreateStoreModalProps) {
@@ -46,8 +47,9 @@ export function CreateStoreModal({ open, onOpenChange, onSuccess }: CreateStoreM
       name: "",
       description: "",
       chunk_size: 1000,
-      chunk_overlap: 200,
-      embedding_model: "text-embedding-ada-002",
+      chunk_overlap: 100,
+      embedding_model: "jina-embeddings-v3",
+      embedding_task: "text-matching",
     },
   });
 
@@ -63,6 +65,7 @@ export function CreateStoreModal({ open, onOpenChange, onSuccess }: CreateStoreM
           chunk_size: data.chunk_size,
           chunk_overlap: data.chunk_overlap,
           embedding_model: data.embedding_model,
+          embedding_task: data.embedding_task,
         },
       };
 
@@ -193,11 +196,26 @@ export function CreateStoreModal({ open, onOpenChange, onSuccess }: CreateStoreM
                 {...register("embedding_model", { 
                   required: "Embedding model is required" 
                 })}
-                placeholder="text-embedding-ada-002"
+                placeholder="jina-embeddings-v3"
                 disabled={isSubmitting}
               />
               {errors.embedding_model && (
                 <p className="text-sm text-red-600">{errors.embedding_model.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="embedding_task">Embedding Task</Label>
+              <Input
+                id="embedding_task"
+                {...register("embedding_task", { 
+                  required: "Embedding task is required" 
+                })}
+                placeholder="text-matching"
+                disabled={isSubmitting}
+              />
+              {errors.embedding_task && (
+                <p className="text-sm text-red-600">{errors.embedding_task.message}</p>
               )}
             </div>
           </div>

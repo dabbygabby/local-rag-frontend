@@ -54,6 +54,7 @@ export interface CreateVectorStoreRequest {
     chunk_size: number;
     chunk_overlap: number;
     embedding_model: string;
+    embedding_task: string;
   };
 }
 

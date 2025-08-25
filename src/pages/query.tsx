@@ -416,7 +416,7 @@ export default function QueryPlayground() {
               {queryResult && queryResult.response && (
                 <div className="space-y-6">
                   {/* Answer Card */}
-                  <Card>
+                  <div>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">Answer</CardTitle>
@@ -486,7 +486,7 @@ export default function QueryPlayground() {
                         </ReactMarkdown>
                       </div>
                     </CardContent>
-                  </Card>
+                  </div>
 
                   {/* Summary Bar */}
                   <div className="grid grid-cols-2 gap-4">
