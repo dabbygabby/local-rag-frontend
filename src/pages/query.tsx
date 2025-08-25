@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Settings, FileText, Copy, Check, Download } from "lucide-react";
+import { Search, Settings, FileText, Copy, Check, Download, Plus } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import jsPDF from "jspdf";
@@ -16,6 +16,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SourceDocumentCard } from "@/components/SourceDocumentCard";
+import { AddToSourcesModal } from "@/components/AddToSourcesModal";
 import { vectorStoreApi, queryApi } from "@/lib/api";
 import { QueryRequest, QueryResponse } from "@/types/api";
 
@@ -48,6 +49,9 @@ export default function QueryPlayground() {
   // PDF download functionality state
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Add to Sources modal state
+  const [showAddToSourcesModal, setShowAddToSourcesModal] = useState(false);
 
   // Fetch available vector stores for the dropdown
   const {
@@ -550,6 +554,15 @@ export default function QueryPlayground() {
                               </>
                             )}
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAddToSourcesModal(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add to Sources
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
@@ -667,6 +680,14 @@ export default function QueryPlayground() {
           </Card>
         </div>
       </div>
+
+      {/* Add to Sources Modal */}
+      <AddToSourcesModal
+        open={showAddToSourcesModal}
+        onOpenChange={setShowAddToSourcesModal}
+        responseText={queryResult?.response || ""}
+        originalQuestion={formState.question}
+      />
     </div>
   );
 }
