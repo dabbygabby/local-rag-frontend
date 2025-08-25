@@ -97,11 +97,15 @@ export interface QueryRequest {
 }
 
 export interface SourceDocument {
-  source_name: string;
-  location: string;
-  score: number;
-  snippet: string;
-  metadata?: DocumentMetadata;
+  filename: string;
+  chunk_index: number;
+  store_id: string;
+  similarity_score: number;
+  rerank_score: number;
+  content_preview: string;
+  location: string | null;
+  source_name: string | null;
+  custom_tags: string[];
 }
 
 export interface QueryUsage {
@@ -116,11 +120,10 @@ export interface QueryRetrieval {
 }
 
 export interface QueryResponse {
-  status: "success" | "error";
-  message?: string;
-  answer?: string;
-  usage?: QueryUsage;
-  retrieval?: QueryRetrieval;
+  response: string;
+  sources: SourceDocument[];
+  confidence_score: number | null;
+  metadata: Record<string, unknown> | null;
 }
 
 // File Upload Types

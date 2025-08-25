@@ -395,7 +395,7 @@ export default function QueryPlayground() {
               )}
 
               {/* Success State */}
-              {queryResult && queryResult.status === "success" && (
+              {queryResult && queryResult.response && (
                 <div className="space-y-6">
                   {/* Answer Card */}
                   <Card>
@@ -404,40 +404,34 @@ export default function QueryPlayground() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {queryResult.answer}
+                        {queryResult.response}
                       </p>
                     </CardContent>
                   </Card>
 
                   {/* Summary Bar */}
-                  {queryResult.usage && (
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span>{queryResult.usage.total_tokens} tokens</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span>${queryResult.usage.cost_usd.toFixed(6)}</span>
-                      </div>
-                      {queryResult.retrieval && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>{queryResult.retrieval.retrieval_time_ms}ms</span>
-                        </div>
-                      )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span>{queryResult.sources.length} sources retrieved</span>
                     </div>
-                  )}
+                    {queryResult.confidence_score && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="h-4 w-4 text-muted-foreground">📊</span>
+                        <span>Confidence: {(queryResult.confidence_score * 100).toFixed(1)}%</span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Sources Section */}
-                  {queryResult.retrieval && queryResult.retrieval.documents && (
+                  {queryResult.sources && queryResult.sources.length > 0 && (
                     <Accordion type="single" collapsible>
                       <AccordionItem value="sources">
                         <AccordionTrigger>
-                          Sources ({queryResult.retrieval.total_documents_retrieved} retrieved)
+                          Sources ({queryResult.sources.length} retrieved)
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4">
-                          {queryResult.retrieval.documents.map((doc, index) => (
+                          {queryResult.sources.map((doc, index) => (
                             <SourceDocumentCard key={index} document={doc} />
                           ))}
                         </AccordionContent>
@@ -447,11 +441,11 @@ export default function QueryPlayground() {
                 </div>
               )}
 
-              {/* Error Response from API */}
-              {queryResult && queryResult.status === "error" && (
+              {/* Empty Response */}
+              {queryResult && !queryResult.response && (
                 <Alert variant="destructive">
                   <AlertDescription>
-                    {queryResult.message || "An error occurred while processing your query"}
+                    No response received from the API
                   </AlertDescription>
                 </Alert>
               )}
