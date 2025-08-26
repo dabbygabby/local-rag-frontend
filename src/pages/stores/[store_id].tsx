@@ -14,6 +14,7 @@ import {
   File,
   Folder,
   Code,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -421,6 +422,16 @@ export default function StoreDetailPage() {
         variant: "destructive",
       });
     }
+  };
+
+  // Remove a file from the folder upload list
+  const removeFolderFile = (originalPath: string) => {
+    setFolderFiles(prev => prev.filter(f => f.originalPath !== originalPath));
+    
+    toast({
+      title: "🗑️ File removed",
+      description: "File has been removed from the upload list.",
+    });
   };
 
   // Upload all processed folder files
@@ -1205,23 +1216,34 @@ export default function StoreDetailPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Files to Upload ({folderFiles.length})</h4>
-                    <Button
-                      onClick={uploadFolderFiles}
-                      disabled={folderFiles.some(f => f.status === "uploading") || isProcessingFolder}
-                      size="sm"
-                    >
-                      {folderFiles.some(f => f.status === "uploading") ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload All Files
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFolderFiles([])}
+                        disabled={folderFiles.some(f => f.status === "uploading") || isProcessingFolder}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Clear All
+                      </Button>
+                      <Button
+                        onClick={uploadFolderFiles}
+                        disabled={folderFiles.some(f => f.status === "uploading") || isProcessingFolder}
+                        size="sm"
+                      >
+                        {folderFiles.some(f => f.status === "uploading") ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload All Files
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
@@ -1236,25 +1258,37 @@ export default function StoreDetailPage() {
                               {folderFile.originalPath}
                             </span>
                           </div>
-                          <span
-                            className={`text-xs shrink-0 ml-2 ${
-                              folderFile.status === "success"
-                                ? "text-green-600"
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={`text-xs ${
+                                folderFile.status === "success"
+                                  ? "text-green-600"
+                                  : folderFile.status === "error"
+                                  ? "text-red-600"
+                                  : folderFile.status === "uploading"
+                                  ? "text-blue-600"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {folderFile.status === "success"
+                                ? "✅ Complete"
                                 : folderFile.status === "error"
-                                ? "text-red-600"
+                                ? "❌ Failed"
                                 : folderFile.status === "uploading"
-                                ? "text-blue-600"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {folderFile.status === "success"
-                              ? "✅ Complete"
-                              : folderFile.status === "error"
-                              ? "❌ Failed"
-                              : folderFile.status === "uploading"
-                              ? `${Math.round(folderFile.progress)}%`
-                              : "⏳ Pending"}
-                          </span>
+                                ? `${Math.round(folderFile.progress)}%`
+                                : "⏳ Pending"}
+                            </span>
+                            {/* Remove button - only show if not uploading or completed */}
+                            {folderFile.status === "pending" && (
+                              <button
+                                onClick={() => removeFolderFile(folderFile.originalPath)}
+                                className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-sm transition-colors"
+                                title="Remove file from upload list"
+                              >
+                                <X className="h-3 w-3 text-red-500 hover:text-red-700" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                         {folderFile.status === "uploading" && (
                           <Progress value={folderFile.progress} className="h-1" />
