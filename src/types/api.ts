@@ -138,6 +138,16 @@ export interface FileUploadStatus {
   message?: string;
 }
 
+// Folder Upload Types
+export interface FolderUploadStatus {
+  originalPath: string;
+  file: File;
+  progress: number;
+  status: "pending" | "processing" | "uploading" | "success" | "error";
+  message?: string;
+  language?: string;
+}
+
 // Rebuild Index Types
 export interface RebuildIndexResponse {
   status: "success" | "error";

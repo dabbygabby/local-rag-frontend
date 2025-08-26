@@ -12,7 +12,8 @@ import {
   Plus,
   Settings,
   File,
-  FolderOpen,
+  Folder,
+  Code,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +53,13 @@ import {
   uploadDocument,
   formatFileSize,
 } from "@/lib/api";
-import { UpdateVectorStoreRequest, FileUploadStatus } from "@/types/api";
+import { UpdateVectorStoreRequest, FileUploadStatus, FolderUploadStatus } from "@/types/api";
+import {
+  processFolderFiles,
+  createMarkdownFile,
+  getFolderStats,
+
+} from "@/lib/folder-utils";
 
 export default function StoreDetailPage() {
   const router = useRouter();
@@ -72,11 +79,17 @@ export default function StoreDetailPage() {
   const [isUploadingText, setIsUploadingText] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadMode, setUploadMode] = useState<"documents" | "markdown" | "folder">(
+  const [uploadMode, setUploadMode] = useState<"documents" | "markdown" | "folders">(
     "documents"
   );
-  const [folderUploadFiles, setFolderUploadFiles] = useState<FileUploadStatus[]>([]);
-  const [isUploadingFolder, setIsUploadingFolder] = useState(false);
+  const [folderFiles, setFolderFiles] = useState<FolderUploadStatus[]>([]);
+  const [isProcessingFolder, setIsProcessingFolder] = useState(false);
+  const [folderStats, setFolderStats] = useState<{
+    totalFiles: number;
+    totalSize: number;
+    fileTypes: Record<string, number>;
+    ignoredFiles: number;
+  } | null>(null);
 
   // Fetch store data
   const {
@@ -210,301 +223,6 @@ export default function StoreDetailPage() {
     });
   };
 
-  // Process folder files and convert code files to markdown
-  const processFolderFiles = async (files: File[]): Promise<File[]> => {
-    const processedFiles: File[] = [];
-    
-    for (const file of files) {
-      try {
-        // Skip hidden files and system files
-        if (file.name.startsWith('.') || file.name === 'Thumbs.db' || file.name === '.DS_Store') {
-          continue;
-        }
-
-        // Convert code files to markdown
-        if (isCodeFile(file.name)) {
-          const markdownContent = await convertCodeToMarkdown(file);
-          const blob = new Blob([markdownContent], { type: 'text/markdown' });
-          const markdownFile = Object.assign(blob, { name: convertToMarkdownFilename(file.name) });
-          processedFiles.push(markdownFile as File);
-        } else if (isTextFile(file.name)) {
-          // For text files, just add them as-is
-          processedFiles.push(file);
-        }
-        // Skip binary files (PDFs, images, etc.) for now
-      } catch (error) {
-        console.warn(`Failed to process file ${file.name}:`, error);
-        // Continue with other files
-      }
-    }
-    
-    return processedFiles;
-  };
-
-  // Check if file is a code file that should be converted to markdown
-  const isCodeFile = (filename: string): boolean => {
-    const codeExtensions = ['.tsx', '.jsx', '.ts', '.js', '.py', '.json', '.html', '.css', '.scss', '.less', '.xml', '.yaml', '.yml', '.sql', '.sh', '.bash', '.md', '.txt'];
-    return codeExtensions.some(ext => filename.toLowerCase().endsWith(ext));
-  };
-
-  // Check if file is a text file that can be processed
-  const isTextFile = (filename: string): boolean => {
-    const textExtensions = ['.txt', '.md', '.log', '.csv'];
-    return textExtensions.some(ext => filename.toLowerCase().endsWith(ext));
-  };
-
-  // Convert code file to markdown
-  const convertCodeToMarkdown = async (file: File): Promise<string> => {
-    const content = await file.text();
-    const extension = file.name.split('.').pop()?.toLowerCase() || '';
-    
-    // Create markdown content with code block
-    const markdown = `# ${file.name}
-
-\`\`\`${getLanguageFromExtension(extension)}
-${content}
-\`\`\`
-
----
-*Converted from ${file.name}*
-*Original file path: ${file.webkitRelativePath || file.name}*
-`;
-
-    return markdown;
-  };
-
-  // Get language identifier for markdown code blocks
-  const getLanguageFromExtension = (extension: string): string => {
-    const languageMap: Record<string, string> = {
-      'tsx': 'tsx',
-      'jsx': 'jsx',
-      'ts': 'typescript',
-      'js': 'javascript',
-      'py': 'python',
-      'json': 'json',
-      'html': 'html',
-      'css': 'css',
-      'scss': 'scss',
-      'less': 'less',
-      'xml': 'xml',
-      'yaml': 'yaml',
-      'yml': 'yaml',
-      'sql': 'sql',
-      'sh': 'bash',
-      'bash': 'bash',
-      'md': 'markdown',
-      'txt': 'text'
-    };
-    
-    return languageMap[extension] || extension;
-  };
-
-  // Convert file path to markdown filename
-  const convertToMarkdownFilename = (originalPath: string): string => {
-    // Remove file extension and replace path separators with hyphens
-    const withoutExt = originalPath.replace(/\.[^/.]+$/, '');
-    const cleanName = withoutExt.replace(/[\/\\]/g, '-');
-    return `${cleanName}.md`;
-  };
-
-  // Handle folder upload start
-  const handleFolderUpload = async () => {
-    if (folderUploadFiles.length === 0) return;
-
-    setIsUploadingFolder(true);
-
-    // Parse metadata if provided
-    let parsedMetadata: Record<string, unknown> | undefined;
-    try {
-      if (uploadMetadata.trim()) {
-        parsedMetadata = JSON.parse(uploadMetadata);
-      }
-    } catch {
-      toast({
-        title: "❌ Invalid metadata",
-        description:
-          "Metadata must be valid JSON. Upload will proceed without metadata.",
-        variant: "destructive",
-      });
-    }
-
-    // Upload files sequentially
-    for (let i = 0; i < folderUploadFiles.length; i++) {
-      const uploadStatus = folderUploadFiles[i];
-      try {
-        await uploadDocument(
-          store_id as string,
-          uploadStatus.file,
-          parsedMetadata,
-          (progress) => {
-            setFolderUploadFiles((prev) =>
-              prev.map((upload) =>
-                upload.file === uploadStatus.file ? { ...upload, progress } : upload
-              )
-            );
-          }
-        );
-
-        // Mark as successful
-        setFolderUploadFiles((prev) =>
-          prev.map((upload) =>
-            upload.file === uploadStatus.file
-              ? { ...upload, status: "success", progress: 100 }
-              : upload
-          )
-        );
-
-      } catch (error) {
-        setFolderUploadFiles((prev) =>
-          prev.map((upload) =>
-            upload.file === uploadStatus.file
-              ? {
-                  ...upload,
-                  status: "error",
-                  message:
-                    error instanceof Error ? error.message : "Upload failed",
-                }
-              : upload
-          )
-        );
-
-        toast({
-          title: "❌ File upload failed",
-          description: `Failed to upload ${uploadStatus.file.name}: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-          variant: "destructive",
-        });
-      }
-    }
-
-    setIsUploadingFolder(false);
-    
-    // Show completion message
-    const successCount = folderUploadFiles.length - folderUploadFiles.filter((upload) => 
-      upload.status === "error"
-    ).length;
-    
-    if (successCount > 0) {
-      toast({
-        title: "✅ Folder upload completed",
-        description: `Successfully uploaded ${successCount} out of ${folderUploadFiles.length} files.`,
-      });
-      
-      // Refresh documents list
-      refetchDocuments();
-    }
-  };
-
-  // Handle folder drop
-  const onFolderDrop = async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
-
-    // Process all files in the folder
-    const allFiles = await processFolderFiles(acceptedFiles);
-    
-    if (allFiles.length === 0) {
-      toast({
-        title: "❌ No valid files found",
-        description: "The folder doesn't contain any processable files.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Initialize upload status for all files
-    const newUploads: FileUploadStatus[] = allFiles.map((file) => ({
-      file,
-      progress: 0,
-      status: "uploading",
-    }));
-
-    setFolderUploadFiles(newUploads);
-    setIsUploadingFolder(true);
-
-    // Parse metadata if provided
-    let parsedMetadata: Record<string, unknown> | undefined;
-    try {
-      if (uploadMetadata.trim()) {
-        parsedMetadata = JSON.parse(uploadMetadata);
-      }
-    } catch {
-      toast({
-        title: "❌ Invalid metadata",
-        description:
-          "Metadata must be valid JSON. Upload will proceed without metadata.",
-        variant: "destructive",
-      });
-    }
-
-    // Upload files sequentially
-    for (let i = 0; i < allFiles.length; i++) {
-      const file = allFiles[i];
-      try {
-        await uploadDocument(
-          store_id as string,
-          file,
-          parsedMetadata,
-          (progress) => {
-            setFolderUploadFiles((prev) =>
-              prev.map((upload) =>
-                upload.file === file ? { ...upload, progress } : upload
-              )
-            );
-          }
-        );
-
-        // Mark as successful
-        setFolderUploadFiles((prev) =>
-          prev.map((upload) =>
-            upload.file === file
-              ? { ...upload, status: "success", progress: 100 }
-              : upload
-          )
-        );
-
-      } catch (error) {
-        setFolderUploadFiles((prev) =>
-          prev.map((upload) =>
-            upload.file === file
-              ? {
-                  ...upload,
-                  status: "error",
-                  message:
-                    error instanceof Error ? error.message : "Upload failed",
-                }
-              : upload
-          )
-        );
-
-        toast({
-          title: "❌ File upload failed",
-          description: `Failed to upload ${file.name}: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-          variant: "destructive",
-        });
-      }
-    }
-
-    setIsUploadingFolder(false);
-    
-    // Show completion message
-    const successCount = allFiles.length - allFiles.filter((_, i: number) => 
-      folderUploadFiles[i]?.status === "error"
-    ).length;
-    
-    if (successCount > 0) {
-      toast({
-        title: "✅ Folder upload completed",
-        description: `Successfully uploaded ${successCount} out of ${allFiles.length} files.`,
-      });
-      
-      // Refresh documents list
-      refetchDocuments();
-    }
-  };
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: true,
@@ -515,27 +233,6 @@ ${content}
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         [".docx"],
       "text/markdown": [".md"],
-    },
-  });
-
-  // Folder dropzone configuration
-  const { getRootProps: getFolderRootProps, getInputProps: getFolderInputProps, isDragActive: isFolderDragActive } = useDropzone({
-    onDrop: onFolderDrop,
-    multiple: true,
-    noClick: false,
-    noDragEventsBubbling: true,
-    accept: {
-      "text/plain": [".txt"],
-      "text/markdown": [".md"],
-      "application/json": [".json"],
-      "text/xml": [".xml"],
-      "text/yaml": [".yml", ".yaml"],
-      "text/css": [".css", ".scss", ".less"],
-      "text/html": [".html", ".htm"],
-      "text/javascript": [".js", ".jsx", ".ts", ".tsx"],
-      "text/x-python": [".py"],
-      "text/x-sh": [".sh", ".bash"],
-      "text/x-sql": [".sql"],
     },
   });
 
@@ -590,6 +287,7 @@ ${content}
     const finalFilename = filename.endsWith(".md")
       ? filename
       : `${filename}.md`;
+    // @ts-expect-error - File constructor is supported in browsers
     return new File([blob], finalFilename, { type: "text/markdown" });
   };
 
@@ -659,6 +357,171 @@ ${content}
       });
     } finally {
       setIsUploadingText(false);
+    }
+  };
+
+  // Handle folder upload
+  const handleFolderUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsProcessingFolder(true);
+    setFolderFiles([]);
+    
+    try {
+      // Get folder stats
+      const stats = getFolderStats(files);
+      setFolderStats(stats);
+
+      if (stats.totalFiles === 0) {
+        toast({
+          title: "❌ No processable files found",
+          description: "The selected folder contains no files that can be processed.",
+          variant: "destructive",
+        });
+        setIsProcessingFolder(false);
+        return;
+      }
+
+      toast({
+        title: "📁 Processing folder...",
+        description: `Processing ${stats.totalFiles} files from the selected folder.`,
+      });
+
+      // Process files and convert to markdown
+      const processedFiles = await processFolderFiles(
+        files,
+        () => {
+          // Update progress - this will be shown in UI
+        }
+      );
+
+      // Create upload status entries for each processed file
+      const folderUploads: FolderUploadStatus[] = processedFiles.map((pf) => ({
+        originalPath: pf.originalPath,
+        file: createMarkdownFile(pf),
+        progress: 0,
+        status: "pending",
+        language: pf.language,
+      }));
+
+      setFolderFiles(folderUploads);
+      setIsProcessingFolder(false);
+
+      toast({
+        title: "✅ Folder processed",
+        description: `Successfully processed ${processedFiles.length} files. Ready to upload.`,
+      });
+
+    } catch (error) {
+      setIsProcessingFolder(false);
+      toast({
+        title: "❌ Failed to process folder",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Upload all processed folder files
+  const uploadFolderFiles = async () => {
+    if (folderFiles.length === 0) return;
+
+    // Parse metadata if provided
+    let parsedMetadata: Record<string, unknown> | undefined;
+    try {
+      if (uploadMetadata.trim()) {
+        parsedMetadata = JSON.parse(uploadMetadata);
+      }
+    } catch {
+      toast({
+        title: "❌ Invalid metadata",
+        description: "Metadata must be valid JSON. Upload will proceed without metadata.",
+        variant: "destructive",
+      });
+    }
+
+    // Upload each file one by one
+    for (const folderFile of folderFiles) {
+      if (folderFile.status !== "pending") continue;
+
+      // Update status to uploading
+      setFolderFiles(prev => 
+        prev.map(f => 
+          f.originalPath === folderFile.originalPath 
+            ? { ...f, status: "uploading", progress: 0 }
+            : f
+        )
+      );
+
+      try {
+        // Create enhanced metadata that includes the original path and language
+        const enhancedMetadata = {
+          ...parsedMetadata,
+          originalPath: folderFile.originalPath,
+          language: folderFile.language,
+          uploadType: "folder",
+        };
+
+        await uploadDocument(
+          store_id as string,
+          folderFile.file,
+          enhancedMetadata,
+          (progress) => {
+            setFolderFiles(prev => 
+              prev.map(f => 
+                f.originalPath === folderFile.originalPath 
+                  ? { ...f, progress }
+                  : f
+              )
+            );
+          }
+        );
+
+        // Mark as successful
+        setFolderFiles(prev => 
+          prev.map(f => 
+            f.originalPath === folderFile.originalPath 
+              ? { ...f, status: "success", progress: 100 }
+              : f
+          )
+        );
+
+        // Small delay between uploads to be nice to the server
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+      } catch (error) {
+        setFolderFiles(prev => 
+          prev.map(f => 
+            f.originalPath === folderFile.originalPath 
+              ? { 
+                  ...f, 
+                  status: "error", 
+                  message: error instanceof Error ? error.message : "Upload failed"
+                }
+              : f
+          )
+        );
+      }
+    }
+
+    // Check if all uploads completed successfully
+    const finalFolderFiles = folderFiles.filter(f => f.status === "success");
+    if (finalFolderFiles.length > 0) {
+      toast({
+        title: "✅ Folder uploaded successfully",
+        description: `${finalFolderFiles.length} files have been processed and indexed.`,
+      });
+
+      // Refresh documents list
+      refetchDocuments();
+
+      // Close the upload modal
+      setShowUploadModal(false);
+      
+      // Reset folder state
+      setFolderFiles([]);
+      setFolderStats(null);
     }
   };
 
@@ -1067,9 +930,9 @@ ${content}
             </button>
             <button
               type="button"
-              onClick={() => setUploadMode("folder")}
+              onClick={() => setUploadMode("folders")}
               className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
-                uploadMode === "folder"
+                uploadMode === "folders"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
@@ -1232,94 +1095,176 @@ ${content}
           )}
 
           {/* Upload Folder Mode */}
-          {uploadMode === "folder" && (
+          {uploadMode === "folders" && (
             <div className="space-y-4">
-              <div
-                {...getFolderRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                  isFolderDragActive
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50"
-                }`}
-              >
-                <input {...getFolderInputProps()} />
-                <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                {isFolderDragActive ? (
-                  <p className="text-lg font-medium">Drop folder here...</p>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-lg font-medium">
-                      Drag & drop a folder here, or click to select
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      This will recursively index all files within the folder.
-                    </p>
+              <div className="space-y-2">
+                <Label htmlFor="folderUpload">Select Folder</Label>
+                <div className="relative">
+                  <input
+                    id="folderUpload"
+                    type="file"
+                    {...({ webkitdirectory: "" } as React.InputHTMLAttributes<HTMLInputElement>)}
+                    multiple
+                    onChange={handleFolderUpload}
+                    disabled={isProcessingFolder}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    title="Select a folder to upload"
+                  />
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                    <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <div className="space-y-2">
+                      <p className="text-lg font-medium">
+                        Click to select a folder
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        All code files will be converted to Markdown format
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Supports: .tsx, .jsx, .ts, .js, .py, .json, .md, .txt, .css, .html, and more
+                      </p>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Folder Upload Progress */}
-              {folderUploadFiles.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Folder Upload Progress</h4>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setFolderUploadFiles([])}
-                      className="text-xs"
-                    >
-                      Clear List
-                    </Button>
-                  </div>
-                  {folderUploadFiles.map((upload, uploadIndex) => (
-                    <div key={uploadIndex} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="truncate">{upload.file.name}</span>
-                        <span
-                          className={
-                            upload.status === "success"
-                              ? "text-green-600"
-                              : upload.status === "error"
-                              ? "text-red-600"
-                              : "text-muted-foreground"
-                          }
-                        >
-                          {upload.status === "success"
-                            ? "Complete"
-                            : upload.status === "error"
-                            ? "Failed"
-                            : `${Math.round(upload.progress)}%`}
-                        </span>
-                      </div>
-                      <Progress value={upload.progress} className="h-2" />
-                      {upload.message && (
-                        <p className="text-xs text-red-600">{upload.message}</p>
-                      )}
+              {/* Metadata Input */}
+              <div>
+                <Label htmlFor="metadata" className="text-sm font-medium">
+                  Optional Metadata (JSON)
+                </Label>
+                <Textarea
+                  id="metadata"
+                  value={uploadMetadata}
+                  onChange={(e) => setUploadMetadata(e.target.value)}
+                  placeholder='{"project": "myapp", "team": "frontend", "version": "v1.0"}'
+                  className="mt-2"
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add custom metadata as JSON. This will be attached to all
+                  uploaded files along with the original path and language.
+                </p>
+              </div>
+
+              {/* Folder Stats */}
+              {folderStats && (
+                <div className="rounded-lg border p-4 bg-muted/5">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Code className="h-4 w-4" />
+                    Folder Analysis
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Files to process:</span>
+                      <span className="ml-2 font-medium">{folderStats.totalFiles}</span>
                     </div>
-                  ))}
+                    <div>
+                      <span className="text-muted-foreground">Total size:</span>
+                      <span className="ml-2 font-medium">{formatFileSize(folderStats.totalSize)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Files ignored:</span>
+                      <span className="ml-2 font-medium">{folderStats.ignoredFiles}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">File types:</span>
+                      <span className="ml-2 font-medium">{Object.keys(folderStats.fileTypes).length}</span>
+                    </div>
+                  </div>
+                  
+                  {Object.keys(folderStats.fileTypes).length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs text-muted-foreground mb-2">File types found:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(folderStats.fileTypes).map(([ext, count]) => (
+                          <Badge key={ext} variant="secondary" className="text-xs">
+                            .{ext} ({count})
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Start Upload Button */}
-              {folderUploadFiles.length > 0 && !isUploadingFolder && (
-                <Button
-                  onClick={handleFolderUpload}
-                  className="w-full"
-                  disabled={isUploadingFolder}
-                >
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Start Folder Upload ({folderUploadFiles.length} files)
-                </Button>
+              {/* Processing Status */}
+              {isProcessingFolder && (
+                <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                    <span className="font-medium">Processing folder...</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Converting files to Markdown format and preparing for upload.
+                  </p>
+                </div>
               )}
 
-              {/* Uploading State */}
-              {isUploadingFolder && (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Uploading folder... Please wait.
-                  </p>
+              {/* File List */}
+              {folderFiles.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Files to Upload ({folderFiles.length})</h4>
+                    <Button
+                      onClick={uploadFolderFiles}
+                      disabled={folderFiles.some(f => f.status === "uploading") || isProcessingFolder}
+                      size="sm"
+                    >
+                      {folderFiles.some(f => f.status === "uploading") ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload All Files
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
+                    {folderFiles.map((folderFile, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {folderFile.language}
+                            </Badge>
+                            <span className="truncate font-mono text-xs">
+                              {folderFile.originalPath}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-xs shrink-0 ml-2 ${
+                              folderFile.status === "success"
+                                ? "text-green-600"
+                                : folderFile.status === "error"
+                                ? "text-red-600"
+                                : folderFile.status === "uploading"
+                                ? "text-blue-600"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {folderFile.status === "success"
+                              ? "✅ Complete"
+                              : folderFile.status === "error"
+                              ? "❌ Failed"
+                              : folderFile.status === "uploading"
+                              ? `${Math.round(folderFile.progress)}%`
+                              : "⏳ Pending"}
+                          </span>
+                        </div>
+                        {folderFile.status === "uploading" && (
+                          <Progress value={folderFile.progress} className="h-1" />
+                        )}
+                        {folderFile.message && (
+                          <p className="text-xs text-red-600 pl-2">{folderFile.message}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
