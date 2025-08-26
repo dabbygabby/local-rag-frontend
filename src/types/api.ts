@@ -98,6 +98,8 @@ export interface QueryRequest {
   query_expansion: boolean;
   vector_stores: string[];
   metadata_filters?: Record<string, unknown>;
+  /** When true the backend runs the deep‑reasoning chain. */
+  deep_reasoning?: boolean;   // <-- NEW FIELD (default = false on server)
 }
 
 export interface SourceDocument {

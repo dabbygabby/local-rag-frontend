@@ -36,6 +36,7 @@ export default function QueryPlayground() {
     query_expansion: false,
     vector_stores: [],
     metadata_filters: {},
+    deep_reasoning: false,          // <-- NEW state property
   });
 
   // Query execution state
@@ -432,6 +433,19 @@ export default function QueryPlayground() {
                       <Switch
                         checked={formState.query_expansion}
                         onCheckedChange={(checked) => updateFormField("query_expansion", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Deep Reasoning</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Enable advanced reasoning chain for complex queries
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formState.deep_reasoning || false}
+                        onCheckedChange={(checked) => updateFormField("deep_reasoning", checked)}
                       />
                     </div>
                   </AccordionContent>
