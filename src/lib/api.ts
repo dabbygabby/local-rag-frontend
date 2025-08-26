@@ -131,7 +131,8 @@ export const uploadDocument = (
 
       // Success / error handling
       xhr.addEventListener('load', () => {
-        if (xhr.status === 201) {
+        // HTTP status is the single source of truth for success/failure
+        if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const doc: Document = JSON.parse(xhr.responseText);
             resolve(doc);
@@ -139,7 +140,7 @@ export const uploadDocument = (
             reject(new Error('Failed to parse successful upload response'));
           }
         } else {
-          // Try to surface the backend error message
+          // Any non-2xx status is treated as failure
           try {
             const err = JSON.parse(xhr.responseText);
             reject(new Error(err.detail ?? `Upload failed: ${xhr.status}`));
@@ -165,10 +166,11 @@ export const uploadDocument = (
     body: form,               // browser adds correct headers
   })
     .then(async (res) => {
-      if (res.status === 201) {
+      // HTTP status is the single source of truth for success/failure
+      if (res.ok) { // res.ok checks for 200-299 status codes
         return (await res.json()) as Document;
       }
-      // Non‑2xx – try to extract a helpful message
+      // Any non-2xx status is treated as failure
       const errBody = await res.text();
       try {
         const err = JSON.parse(errBody);

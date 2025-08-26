@@ -106,7 +106,8 @@ export function AddToSourcesModal({
       // Create file from response text
       const file = createFileFromText(responseText, data.filename);
 
-      // Upload the text as a markdown file
+      // uploadDocument will throw an error if HTTP status is not 2xx
+      // This ensures HTTP status is the single source of truth
       await uploadDocument(data.knowledgeBaseId, file);
 
       toast({
@@ -117,6 +118,7 @@ export function AddToSourcesModal({
       reset();
       onOpenChange(false);
     } catch (error) {
+      // Only reach here if HTTP status was not 2xx or network error occurred
       const errorMessage = error instanceof Error ? error.message : "Failed to add to sources";
       setError(errorMessage);
       toast({

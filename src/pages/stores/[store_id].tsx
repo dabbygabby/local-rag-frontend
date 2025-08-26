@@ -167,6 +167,8 @@ export default function StoreDetailPage() {
     // Upload each file
     acceptedFiles.forEach(async (file) => {
       try {
+        // uploadDocument will throw an error if HTTP status is not 201
+        // This ensures HTTP status is the single source of truth
         await uploadDocument(
           store_id as string,
           file,
@@ -180,7 +182,7 @@ export default function StoreDetailPage() {
           }
         );
 
-        // Mark as successful
+        // Only reach here if HTTP status was 201 (successful)
         setUploadFiles((prev) =>
           prev.map((upload) =>
             upload.file === file
@@ -200,6 +202,7 @@ export default function StoreDetailPage() {
         // Close the upload modal after successful upload
         setShowUploadModal(false);
       } catch (error) {
+        // Only reach here if HTTP status was not 201 or network error occurred
         setUploadFiles((prev) =>
           prev.map((upload) =>
             upload.file === file
@@ -333,7 +336,8 @@ export default function StoreDetailPage() {
       // Create file from text
       const file = createFileFromText(textUpload, textUploadFilename);
 
-      // Upload the text as a markdown file
+      // uploadDocument will throw an error if HTTP status is not 2xx
+      // This ensures HTTP status is the single source of truth
       await uploadDocument(store_id as string, file, parsedMetadata);
 
       toast({
@@ -351,6 +355,7 @@ export default function StoreDetailPage() {
       // Close the upload modal
       setShowUploadModal(false);
     } catch (error) {
+      // Only reach here if HTTP status was not 2xx or network error occurred
       toast({
         title: "❌ Text upload failed",
         description: error instanceof Error ? error.message : "Unknown error",
@@ -474,6 +479,8 @@ export default function StoreDetailPage() {
           uploadType: "folder",
         };
 
+        // uploadDocument will throw an error if HTTP status is not 2xx
+        // This ensures HTTP status is the single source of truth
         await uploadDocument(
           store_id as string,
           folderFile.file,
@@ -489,7 +496,7 @@ export default function StoreDetailPage() {
           }
         );
 
-        // Mark as successful
+        // Only reach here if HTTP status was 2xx (successful)
         setFolderFiles(prev => 
           prev.map(f => 
             f.originalPath === folderFile.originalPath 
@@ -502,6 +509,7 @@ export default function StoreDetailPage() {
         await new Promise(resolve => setTimeout(resolve, 100));
 
       } catch (error) {
+        // Only reach here if HTTP status was not 2xx or network error occurred
         setFolderFiles(prev => 
           prev.map(f => 
             f.originalPath === folderFile.originalPath 
@@ -598,7 +606,19 @@ export default function StoreDetailPage() {
         </div>
         {/* Action Buttons */}
         <div className="flex justify-end space-x-2 mb-4">
-          <Button onClick={() => setShowUploadModal(true)} variant="default">
+          <Button 
+            onClick={() => {
+              // Reset all upload state before opening modal
+              setUploadFiles([]);
+              setUploadMetadata("");
+              setTextUpload("");
+              setTextUploadFilename("");
+              setFolderFiles([]);
+              setFolderStats(null);
+              setShowUploadModal(true);
+            }} 
+            variant="default"
+          >
             <Plus />
             New File
           </Button>
@@ -904,7 +924,21 @@ export default function StoreDetailPage() {
       </Dialog>
 
       {/* Add/Upload Modal */}
-      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+      <Dialog 
+        open={showUploadModal} 
+        onOpenChange={(open) => {
+          setShowUploadModal(open);
+          // Reset upload state when modal is closed
+          if (!open) {
+            setUploadFiles([]);
+            setUploadMetadata("");
+            setTextUpload("");
+            setTextUploadFilename("");
+            setFolderFiles([]);
+            setFolderStats(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
