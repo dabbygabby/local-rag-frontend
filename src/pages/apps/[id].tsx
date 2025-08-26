@@ -5,7 +5,6 @@ import { ArrowLeft, Play, Edit, Trash2, Database, Settings, History } from "luci
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useApp, useAppRuns, useDeleteApp } from "@/hooks/apps";
 import { AppFormModal } from "@/components/AppFormModal";
@@ -86,7 +85,7 @@ export default function AppDetailPage() {
   const runs = runsData?.runs || [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto">
       {/* Header */}
       <div className="mb-8">
         <Button variant="ghost" asChild className="mb-4">
@@ -293,13 +292,14 @@ export default function AppDetailPage() {
       />
 
       <ConfirmationDialog
-        isOpen={deletingApp}
-        onClose={() => setDeletingApp(false)}
+        open={deletingApp}
+        onOpenChange={() => setDeletingApp(false)}
         onConfirm={handleDelete}
         title="Delete App"
-        message={`Are you sure you want to delete "${app.name}"? This action cannot be undone and will also remove all run history.`}
+        description={`Are you sure you want to delete "${app.name}"? This action cannot be undone and will also remove all run history.`}
         confirmText="Delete"
-        variant="destructive"
+        cancelText="Cancel"
+        destructive={true}
       />
     </div>
   );
