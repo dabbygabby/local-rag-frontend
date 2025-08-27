@@ -251,8 +251,18 @@ export function createMarkdownFile(processedFile: ProcessedFile): File {
     + '.md';
   
   const blob = new Blob([processedFile.convertedContent], { type: 'text/markdown' });
-  // @ts-expect-error - File constructor is supported in browsers
-  return new File([blob], safeFilename, { type: 'text/markdown' });
+  
+  // Use a more compatible approach for File creation
+  try {
+    return new (globalThis.File || File)([blob], safeFilename, { type: 'text/markdown' });
+  } catch {
+    // Fallback: create a File-like object
+    const fileObj = Object.assign(blob, {
+      name: safeFilename,
+      lastModified: Date.now(),
+    }) as File;
+    return fileObj;
+  }
 }
 
 /**

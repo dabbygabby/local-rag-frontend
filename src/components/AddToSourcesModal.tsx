@@ -90,7 +90,18 @@ export function AddToSourcesModal({
   const createFileFromText = (text: string, filename: string): File => {
     const blob = new Blob([text], { type: "text/markdown" });
     const finalFilename = filename.endsWith(".md") ? filename : `${filename}.md`;
-    return new File([blob], finalFilename, { type: "text/markdown" });
+    
+    // Use a more compatible approach for File creation
+    try {
+      return new (globalThis.File || File)([blob], finalFilename, { type: "text/markdown" });
+    } catch {
+      // Fallback: create a File-like object
+      const fileObj = Object.assign(blob, {
+        name: finalFilename,
+        lastModified: Date.now(),
+      }) as File;
+      return fileObj;
+    }
   };
 
   const onSubmit = async (data: FormData) => {
