@@ -19,6 +19,7 @@ import { SourceDocumentCard } from "@/components/SourceDocumentCard";
 import { AddToSourcesModal } from "@/components/AddToSourcesModal";
 import { vectorStoreApi, queryApi } from "@/lib/api";
 import { QueryRequest, QueryResponse } from "@/types/api";
+import { MAX_COMPLETION_TOKENS, MIN_COMPLETION_TOKENS, TOKEN_STEP_SIZE, DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 
 export default function QueryPlayground() {
   // Form state - mirrors the QueryRequest structure
@@ -30,7 +31,7 @@ export default function QueryPlayground() {
     max_docs_for_context: 3,
     similarity_threshold: 0,
     temperature: 0.7,
-    max_tokens: 1000,
+    max_tokens: DEFAULT_MAX_TOKENS,
     include_sources: true,
     include_confidence: false,
     query_expansion: false,
@@ -91,7 +92,18 @@ export default function QueryPlayground() {
     setQueryError(null);
     
     try {
-      const result = await queryApi.query(formState);
+      // Clamp max_tokens to ensure it's within safe bounds before sending
+      const safeMaxTokens = Math.min(
+        formState.max_tokens ?? DEFAULT_MAX_TOKENS,
+        MAX_COMPLETION_TOKENS,
+      );
+      
+      const payload = {
+        ...formState,
+        max_tokens: safeMaxTokens,
+      };
+      
+      const result = await queryApi.query(payload);
       setQueryResult(result);
     } catch (error) {
       setQueryError(error instanceof Error ? error.message : "Failed to execute query");
@@ -369,13 +381,13 @@ export default function QueryPlayground() {
                       <Slider
                         value={[formState.max_tokens]}
                         onValueChange={([value]) => updateFormField("max_tokens", value)}
-                        max={4000}
-                        min={1000}
-                        step={100}
+                        max={MAX_COMPLETION_TOKENS}
+                        min={MIN_COMPLETION_TOKENS}
+                        step={TOKEN_STEP_SIZE}
                         className="w-full"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Maximum length of the generated response
+                        Maximum tokens for the response (up to {MAX_COMPLETION_TOKENS.toLocaleString()})
                       </p>
                     </div>
                   </AccordionContent>

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { App, CreateAppRequest, UpdateAppRequest } from "@/types/app";
 import { useCreateApp, useUpdateApp } from "@/hooks/apps";
 import { vectorStoreApi } from "@/lib/api";
+import { DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 
 interface AppFormModalProps {
   isOpen: boolean;
@@ -53,7 +54,7 @@ export function AppFormModal({ isOpen, onClose, app }: AppFormModalProps) {
       },
       generationSettings: app?.generationSettings || {
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: DEFAULT_MAX_TOKENS,
         include_sources: true,
         include_confidence: false,
       },
@@ -223,7 +224,7 @@ export function AppFormModal({ isOpen, onClose, app }: AppFormModalProps) {
                 </div>
                 <div className="flex justify-between">
                   <span>Max Tokens:</span>
-                  <span>{watchedGenerationSettings?.max_tokens || 1000}</span>
+                  <span>{watchedGenerationSettings?.max_tokens || DEFAULT_MAX_TOKENS}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Include Sources:</span>

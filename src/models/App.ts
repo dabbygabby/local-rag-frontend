@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 
 export interface IApp extends Document {
   name: string;
@@ -45,7 +46,7 @@ const AppSchema = new Schema<IApp>(
       type: Schema.Types.Mixed,
       default: {
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: DEFAULT_MAX_TOKENS,
         include_sources: true,
         include_confidence: false,
       },

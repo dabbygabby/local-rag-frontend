@@ -5,6 +5,7 @@ import { AppRun } from "@/models/AppRun";
 import { RunAppRequest, RunAppResponse } from "@/types/app";
 import { QueryRequest } from "@/types/api";
 import { queryApi } from "@/lib/api";
+import { DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 
 export default async function handler(
   req: NextApiRequest,
@@ -51,7 +52,7 @@ export default async function handler(
       max_docs_for_context: finalRetrievalSettings.max_docs_for_context || 3,
       similarity_threshold: finalRetrievalSettings.similarity_threshold || 0,
       temperature: finalGenerationSettings.temperature || 0.7,
-      max_tokens: finalGenerationSettings.max_tokens || 1000,
+      max_tokens: finalGenerationSettings.max_tokens || DEFAULT_MAX_TOKENS,
       include_sources: finalGenerationSettings.include_sources || true,
       include_confidence: finalGenerationSettings.include_confidence || false,
       query_expansion: finalRetrievalSettings.query_expansion || false,

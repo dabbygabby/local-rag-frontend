@@ -15,6 +15,7 @@ import { SourceDocument } from "@/types/api";
 import { SourceDocumentCard } from "@/components/SourceDocumentCard";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { MAX_COMPLETION_TOKENS, MIN_COMPLETION_TOKENS, TOKEN_STEP_SIZE } from "@/constants/tokens";
 
 interface AppRunModalProps {
   isOpen: boolean;
@@ -222,11 +223,14 @@ export function AppRunModal({ isOpen, onClose, app }: AppRunModalProps) {
                       <Slider
                         value={[watchedOverrides?.generationSettings?.max_tokens || app.generationSettings.max_tokens]}
                         onValueChange={([value]) => setValue("overrides.generationSettings.max_tokens", value)}
-                        max={4000}
-                        min={100}
-                        step={100}
+                        max={MAX_COMPLETION_TOKENS}
+                        min={MIN_COMPLETION_TOKENS}
+                        step={TOKEN_STEP_SIZE}
                         className="w-full"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Maximum tokens for the response (up to {MAX_COMPLETION_TOKENS.toLocaleString()})
+                      </p>
                     </div>
 
                     <div className="flex items-center space-x-2">

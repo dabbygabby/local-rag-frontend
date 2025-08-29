@@ -98,7 +98,7 @@ Generation Settings:
 
 Temperature: A <Slider> (0 to 1, step 0.01) for the temperature field.
 
-Max Tokens: A <Slider> with a range of 1000 to 4000 for the max_tokens field.
+Max Tokens: A <Slider> with a range of 1 to 65,536 for the max_tokens field.
 
 Advanced Options:
 
