@@ -64,6 +64,7 @@ export default function StoreDetailPage() {
     setUploadFiles,
     uploadMetadata,
     setUploadMetadata,
+    uploadResults,
     getRootProps,
     getInputProps,
     isDragActive,
@@ -232,6 +233,7 @@ export default function StoreDetailPage() {
         isDragActive={isDragActive}
         uploadFiles={uploadFiles}
         setUploadFiles={setUploadFiles}
+        uploadResults={uploadResults}
         
         // Text upload props
         textUpload={textUpload}

@@ -1,17 +1,47 @@
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { FileUploadStatus } from "@/types/api";
-import { uploadDocument } from "@/lib/api";
+import { FileUploadStatus, UploadFileResult } from "@/types/api";
+import { vectorStoreApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { sha256File } from "@/utils/hash";
 
 export function useFileUpload(storeId: string | undefined, refetchDocuments: () => void, setShowUploadModal: (show: boolean) => void) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadStatus[]>([]);
   const [uploadMetadata, setUploadMetadata] = useState("");
+  const [uploadResults, setUploadResults] = useState<UploadFileResult[]>([]);
+  const [uploadedHashes, setUploadedHashes] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
-  // File upload handling
-  const onDrop = (acceptedFiles: File[]) => {
-    const newUploads: FileUploadStatus[] = acceptedFiles.map((file) => ({
+  // File upload handling with hash-based tracking
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (!acceptedFiles.length) return;
+
+    // Compute hashes for duplicate detection
+    const filesWithHashes = await Promise.all(
+      acceptedFiles.map(async (file) => ({
+        file,
+        hash: await sha256File(file),
+      }))
+    );
+
+    // Filter out duplicates from this session
+    const newFiles = filesWithHashes.filter(({ hash, file }) => {
+      if (uploadedHashes.has(hash)) {
+        toast({
+          title: "File already uploaded",
+          description: `"${file.name}" already uploaded in this session - skipped.`,
+        });
+        return false;
+      }
+      return true;
+    });
+
+    if (newFiles.length === 0) {
+      return; // All files were duplicates
+    }
+
+    // Create upload status entries
+    const newUploads: FileUploadStatus[] = newFiles.map(({ file }) => ({
       file,
       progress: 0,
       status: "uploading",
@@ -34,67 +64,67 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
       });
     }
 
-    // Upload each file
-    acceptedFiles.forEach(async (file) => {
-      try {
-        // uploadDocument will throw an error if HTTP status is not 201
-        // This ensures HTTP status is the single source of truth
-        await uploadDocument(
-          storeId as string,
-          file,
-          parsedMetadata,
-          (progress) => {
-            setUploadFiles((prev) =>
-              prev.map((upload) =>
-                upload.file === file ? { ...upload, progress } : upload
-              )
-            );
-          }
-        );
+    try {
+      // Upload all files at once using the new hash-based API
+      const response = await vectorStoreApi.uploadFiles(
+        storeId as string,
+        newFiles.map(({ file }) => file),
+        parsedMetadata
+      );
 
-        // Only reach here if HTTP status was 201 (successful)
-        setUploadFiles((prev) =>
-          prev.map((upload) =>
-            upload.file === file
-              ? { ...upload, status: "success", progress: 100 }
-              : upload
-          )
-        );
+      // Handle the response
+      const results = response.files;
+      setUploadResults(results);
 
-        toast({
-          title: "✅ File uploaded successfully",
-          description: `${file.name} has been processed and indexed.`,
-        });
+      // Update uploaded hashes set
+      const newHashes = newFiles.map(({ hash }) => hash);
+      setUploadedHashes((prev) => new Set([...prev, ...newHashes]));
 
-        // Refresh documents list
-        refetchDocuments();
+      // Update upload status for all files to success
+      setUploadFiles((prev) =>
+        prev.map((upload) => ({
+          ...upload,
+          status: "success" as const,
+          progress: 100,
+        }))
+      );
 
-        // Close the upload modal after successful upload
-        setShowUploadModal(false);
-      } catch (error) {
-        // Only reach here if HTTP status was not 201 or network error occurred
-        setUploadFiles((prev) =>
-          prev.map((upload) =>
-            upload.file === file
-              ? {
-                  ...upload,
-                  status: "error",
-                  message:
-                    error instanceof Error ? error.message : "Upload failed",
-                }
-              : upload
-          )
-        );
+      // Show summary toast
+      const added = results.filter((r) => r.status === "added").length;
+      const updated = results.filter((r) => r.status === "updated").length;
+      const skipped = results.filter((r) => r.status === "skipped").length;
 
-        toast({
-          title: "❌ Upload failed",
-          description: `Failed to upload ${file.name}: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-          variant: "destructive",
-        });
-      }
-    });
+      const parts = [];
+      if (added) parts.push(`${added} added`);
+      if (updated) parts.push(`${updated} updated`);
+      if (skipped) parts.push(`${skipped} unchanged`);
+
+      toast({
+        title: "Sources processed",
+        description: parts.join(", ") + ".",
+      });
+
+      // Refresh documents list
+      refetchDocuments();
+
+      // Close the upload modal after successful upload
+      setShowUploadModal(false);
+    } catch (error) {
+      // Update all files as failed
+      setUploadFiles((prev) =>
+        prev.map((upload) => ({
+          ...upload,
+          status: "error" as const,
+          message: error instanceof Error ? error.message : "Upload failed",
+        }))
+      );
+
+      toast({
+        title: "Upload failed",
+        description: String(error),
+        variant: "destructive",
+      });
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -115,6 +145,8 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
     setUploadFiles,
     uploadMetadata,
     setUploadMetadata,
+    uploadResults,
+    setUploadResults,
     getRootProps,
     getInputProps,
     isDragActive,

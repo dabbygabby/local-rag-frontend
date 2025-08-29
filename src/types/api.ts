@@ -152,6 +152,17 @@ export interface FolderUploadStatus {
   language?: string;
 }
 
+// Upload Response Types
+export interface UploadFileResult {
+  filename: string;
+  status: 'added' | 'updated' | 'skipped';
+  message: string;
+}
+
+export interface UploadResponse {
+  files: UploadFileResult[];
+}
+
 // Rebuild Index Types
 export interface RebuildIndexResponse {
   status: "success" | "error";

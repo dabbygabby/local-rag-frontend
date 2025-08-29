@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { vectorStoreApi, uploadDocument } from "@/lib/api";
+import { vectorStoreApi } from "@/lib/api";
+import { UploadFileResult } from "@/types/api";
 
 interface AddToSourcesModalProps {
   open: boolean;
@@ -37,6 +38,7 @@ export function AddToSourcesModal({
 }: AddToSourcesModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadResults, setUploadResults] = useState<UploadFileResult[]>([]);
   const { toast } = useToast();
 
   // Fetch available knowledge bases
@@ -117,13 +119,26 @@ export function AddToSourcesModal({
       // Create file from response text
       const file = createFileFromText(responseText, data.filename);
 
-      // uploadDocument will throw an error if HTTP status is not 2xx
-      // This ensures HTTP status is the single source of truth
-      await uploadDocument(data.knowledgeBaseId, file);
+      // Use the new hash-based upload API
+      const response = await vectorStoreApi.uploadFiles(data.knowledgeBaseId, [file]);
+      
+      // Handle the response
+      const results = response.files;
+      setUploadResults(results);
+
+      // Show summary toast
+      const added = results.filter(r => r.status === 'added').length;
+      const updated = results.filter(r => r.status === 'updated').length;
+      const skipped = results.filter(r => r.status === 'skipped').length;
+
+      const parts = [];
+      if (added) parts.push(`${added} added`);
+      if (updated) parts.push(`${updated} updated`);
+      if (skipped) parts.push(`${skipped} unchanged`);
 
       toast({
-        title: "✅ Added to Sources",
-        description: `"${file.name}" has been successfully uploaded to the knowledge base.`,
+        title: 'Sources processed',
+        description: parts.join(', ') + '.',
       });
 
       reset();
@@ -133,7 +148,7 @@ export function AddToSourcesModal({
       const errorMessage = error instanceof Error ? error.message : "Failed to add to sources";
       setError(errorMessage);
       toast({
-        title: "❌ Failed to add to sources",
+        title: "Upload failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -148,6 +163,7 @@ export function AddToSourcesModal({
       if (!open) {
         reset();
         setError(null);
+        setUploadResults([]);
       }
     }
   };
@@ -242,6 +258,31 @@ export function AddToSourcesModal({
               Content length: {responseText.length} characters
             </div>
           </div>
+
+          {/* Upload Results with Status Badges */}
+          {uploadResults.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Upload Results</h4>
+              <ul className="space-y-1 text-sm">
+                {uploadResults.map((result, index) => (
+                  <li key={`${result.filename}-${index}`} className="flex items-center justify-between">
+                    <span className="flex-1 truncate">{result.filename}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        result.status === 'added'
+                          ? 'bg-green-100 text-green-800'
+                          : result.status === 'updated'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {result.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <DialogFooter>
             <Button

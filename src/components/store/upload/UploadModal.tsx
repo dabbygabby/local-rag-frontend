@@ -8,7 +8,7 @@ import {
 import { FileUploadTab } from "./FileUploadTab";
 import { TextUploadTab } from "./TextUploadTab";
 import { FolderUploadTab } from "./FolderUploadTab";
-import { FileUploadStatus, FolderUploadStatus } from "@/types/api";
+import { FileUploadStatus, FolderUploadStatus, UploadFileResult } from "@/types/api";
 
 type UploadMode = "documents" | "markdown" | "folders";
 
@@ -19,11 +19,12 @@ interface UploadModalProps {
   setUploadMode: (mode: UploadMode) => void;
   
   // File upload props
-  getRootProps: () => any;
-  getInputProps: () => any;
+  getRootProps: () => Record<string, unknown>;
+  getInputProps: () => Record<string, unknown>;
   isDragActive: boolean;
   uploadFiles: FileUploadStatus[];
   setUploadFiles: (files: FileUploadStatus[]) => void;
+  uploadResults: UploadFileResult[];
   
   // Text upload props
   textUpload: string;
@@ -44,7 +45,7 @@ interface UploadModalProps {
   } | null;
   folderFiles: FolderUploadStatus[];
   setFolderFiles: (files: FolderUploadStatus[]) => void;
-  setFolderStats: (stats: any) => void;
+  setFolderStats: (stats: { totalFiles: number; totalSize: number; fileTypes: Record<string, number>; ignoredFiles: number; } | null) => void;
   removeFolderFile: (originalPath: string) => void;
   uploadFolderFiles: () => void;
   
@@ -65,6 +66,7 @@ export function UploadModal({
   isDragActive,
   uploadFiles,
   setUploadFiles,
+  uploadResults,
   
   // Text upload props
   textUpload,
@@ -161,6 +163,7 @@ export function UploadModal({
             uploadMetadata={uploadMetadata}
             setUploadMetadata={setUploadMetadata}
             setUploadFiles={setUploadFiles}
+            uploadResults={uploadResults}
           />
         )}
 

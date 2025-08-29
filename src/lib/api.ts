@@ -9,7 +9,9 @@ import {
   QueryRequest,
   QueryResponse,
   RebuildIndexResponse,
+  UploadResponse,
 } from "@/types/api";
+import { sha256File } from "@/utils/hash";
 
 const API_BASE_URL = "http://localhost:8000";
 
@@ -88,6 +90,41 @@ export const vectorStoreApi = {
   // Delete a vector store
   delete: (storeId: string): Promise<void> =>
     apiCall(`/vector-stores/${storeId}`, { method: "DELETE" }),
+  
+  // Upload multiple files with hash-based tracking to the new files endpoint
+  uploadFiles: async (storeId: string, files: File[], metadata?: Record<string, unknown>): Promise<UploadResponse> => {
+    // Compute hashes for all files
+    const hashes = await Promise.all(files.map(file => sha256File(file)));
+    
+    // Build FormData with files and their hashes
+    const form = new FormData();
+    files.forEach(file => form.append('files', file));
+    hashes.forEach(hash => form.append('hashes', hash));
+    
+    // Add metadata if provided
+    if (metadata && Object.keys(metadata).length) {
+      form.append('metadata', JSON.stringify(metadata));
+    }
+    
+    // Use the new /api/v1/stores/{storeId}/files endpoint
+    const response = await fetch(`${API_BASE_URL}/api/v1/stores/${storeId}/files`, {
+      method: 'POST',
+      body: form,
+    });
+    
+    if (!response.ok) {
+      // Try to parse error response for better error messages
+      try {
+        const errorResponse = await response.json();
+        throw new Error(errorResponse.detail || `Upload failed: ${response.status} ${response.statusText}`);
+      } catch {
+        // If we can't parse the error response, throw generic error
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+      }
+    }
+    
+    return response.json() as Promise<UploadResponse>;
+  },
 };
 
 /** ------------------------------------------------------------------
