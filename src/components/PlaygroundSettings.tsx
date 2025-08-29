@@ -52,25 +52,28 @@ export function PlaygroundSettings({
   // Wrapper for slider changes that prevents event propagation
   const handleSliderChange = <K extends keyof ChatSettings>(
     field: K,
-    value: ChatSettings[K],
-    event?: React.PointerEvent
+    value: ChatSettings[K]
   ) => {
-    if (event) {
-      event.stopPropagation();
-    }
     updateSetting(field, value);
   };
 
   // Wrapper for switch changes that prevents event propagation
   const handleSwitchChange = <K extends keyof ChatSettings>(
     field: K,
-    value: ChatSettings[K],
-    event?: React.PointerEvent
+    value: ChatSettings[K]
   ) => {
-    if (event) {
-      event.stopPropagation();
-    }
     updateSetting(field, value);
+  };
+
+  // Comprehensive event prevention for sliders
+  const preventSliderEvents = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
+  // Comprehensive event prevention for switches
+  const preventSwitchEvents = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
   };
 
   // Handle vector store selection
@@ -140,22 +143,27 @@ export function PlaygroundSettings({
       </div>
 
       {/* Configuration Accordion */}
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion type="multiple" className="w-full">
         {/* Retrieval Settings */}
         <AccordionItem value="retrieval">
           <AccordionTrigger>Retrieval Settings</AccordionTrigger>
           <AccordionContent className="space-y-4">
             <div className="space-y-2">
               <Label>Top K: {settings.top_k}</Label>
-              <Slider
-                value={[settings.top_k]}
-                onValueChange={([value]) => handleSliderChange("top_k", value)}
-                onPointerDown={(e) => e.stopPropagation()}
-                max={20}
-                min={1}
-                step={1}
-                className="w-full"
-              />
+              <div
+                onPointerDown={preventSliderEvents}
+                onMouseDown={preventSliderEvents}
+                onClick={preventSliderEvents}
+              >
+                <Slider
+                  value={[settings.top_k]}
+                  onValueChange={([value]) => handleSliderChange("top_k", value)}
+                  max={20}
+                  min={1}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Number of documents to retrieve
               </p>
@@ -163,15 +171,20 @@ export function PlaygroundSettings({
 
             <div className="space-y-2">
               <Label>Similarity Threshold: {settings.similarity_threshold}</Label>
-              <Slider
-                value={[settings.similarity_threshold]}
-                onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
-                onPointerDown={(e) => e.stopPropagation()}
-                max={1}
-                min={0}
-                step={0.01}
-                className="w-full"
-              />
+              <div
+                onPointerDown={preventSliderEvents}
+                onMouseDown={preventSliderEvents}
+                onClick={preventSliderEvents}
+              >
+                <Slider
+                  value={[settings.similarity_threshold]}
+                  onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
+                  max={1}
+                  min={0}
+                  step={0.01}
+                  className="w-full"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Minimum similarity score for retrieved documents
               </p>
@@ -179,15 +192,20 @@ export function PlaygroundSettings({
 
             <div className="space-y-2">
               <Label>Max Docs for Context: {settings.max_docs_for_context}</Label>
-              <Slider
-                value={[settings.max_docs_for_context]}
-                onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
-                onPointerDown={(e) => e.stopPropagation()}
-                max={10}
-                min={1}
-                step={1}
-                className="w-full"
-              />
+              <div
+                onPointerDown={preventSliderEvents}
+                onMouseDown={preventSliderEvents}
+                onClick={preventSliderEvents}
+              >
+                <Slider
+                  value={[settings.max_docs_for_context]}
+                  onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
+                  max={10}
+                  min={1}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Maximum number of documents to use for generating context
               </p>
@@ -201,15 +219,20 @@ export function PlaygroundSettings({
           <AccordionContent className="space-y-4">
             <div className="space-y-2">
               <Label>Temperature: {settings.temperature}</Label>
-              <Slider
-                value={[settings.temperature]}
-                onValueChange={([value]) => handleSliderChange("temperature", value)}
-                onPointerDown={(e) => e.stopPropagation()}
-                max={1}
-                min={0}
-                step={0.01}
-                className="w-full"
-              />
+              <div
+                onPointerDown={preventSliderEvents}
+                onMouseDown={preventSliderEvents}
+                onClick={preventSliderEvents}
+              >
+                <Slider
+                  value={[settings.temperature]}
+                  onValueChange={([value]) => handleSliderChange("temperature", value)}
+                  max={1}
+                  min={0}
+                  step={0.01}
+                  className="w-full"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Controls randomness in responses (0 = focused, 1 = creative)
               </p>
@@ -217,15 +240,20 @@ export function PlaygroundSettings({
 
             <div className="space-y-2">
               <Label>Max Tokens: {settings.max_tokens}</Label>
-              <Slider
-                value={[settings.max_tokens]}
-                onValueChange={([value]) => handleSliderChange("max_tokens", value)}
-                onPointerDown={(e) => e.stopPropagation()}
-                max={MAX_COMPLETION_TOKENS}
-                min={MIN_COMPLETION_TOKENS}
-                step={TOKEN_STEP_SIZE}
-                className="w-full"
-              />
+              <div
+                onPointerDown={preventSliderEvents}
+                onMouseDown={preventSliderEvents}
+                onClick={preventSliderEvents}
+              >
+                <Slider
+                  value={[settings.max_tokens]}
+                  onValueChange={([value]) => handleSliderChange("max_tokens", value)}
+                  max={MAX_COMPLETION_TOKENS}
+                  min={MIN_COMPLETION_TOKENS}
+                  step={TOKEN_STEP_SIZE}
+                  className="w-full"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Maximum tokens for the response (up to {MAX_COMPLETION_TOKENS.toLocaleString()})
               </p>
@@ -244,11 +272,16 @@ export function PlaygroundSettings({
                   Include source documents in the response
                 </p>
               </div>
-              <Switch
-                checked={settings.include_sources}
-                onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+              <div
+                onPointerDown={preventSwitchEvents}
+                onMouseDown={preventSwitchEvents}
+                onClick={preventSwitchEvents}
+              >
+                <Switch
+                  checked={settings.include_sources}
+                  onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -258,11 +291,16 @@ export function PlaygroundSettings({
                   Include document metadata in the response
                 </p>
               </div>
-              <Switch
-                checked={settings.include_metadata}
-                onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+              <div
+                onPointerDown={preventSwitchEvents}
+                onMouseDown={preventSwitchEvents}
+                onClick={preventSwitchEvents}
+              >
+                <Switch
+                  checked={settings.include_metadata}
+                  onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -272,11 +310,16 @@ export function PlaygroundSettings({
                   Include confidence scores in the response
                 </p>
               </div>
-              <Switch
-                checked={settings.include_confidence}
-                onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+              <div
+                onPointerDown={preventSwitchEvents}
+                onMouseDown={preventSwitchEvents}
+                onClick={preventSwitchEvents}
+              >
+                <Switch
+                  checked={settings.include_confidence}
+                  onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -286,11 +329,16 @@ export function PlaygroundSettings({
                   Automatically expand query with related terms
                 </p>
               </div>
-              <Switch
-                checked={settings.query_expansion}
-                onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+              <div
+                onPointerDown={preventSwitchEvents}
+                onMouseDown={preventSwitchEvents}
+                onClick={preventSwitchEvents}
+              >
+                <Switch
+                  checked={settings.query_expansion}
+                  onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -300,11 +348,16 @@ export function PlaygroundSettings({
                   Enable advanced reasoning chain for complex queries
                 </p>
               </div>
-              <Switch
-                checked={settings.deep_reasoning}
-                onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+              <div
+                onPointerDown={preventSwitchEvents}
+                onMouseDown={preventSwitchEvents}
+                onClick={preventSwitchEvents}
+              >
+                <Switch
+                  checked={settings.deep_reasoning}
+                  onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -314,11 +367,16 @@ export function PlaygroundSettings({
                   Perform multi-stage retrieval for related chunks
                 </p>
               </div>
-              <Switch
-                checked={settings.multi_source_fetch}
-                onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+              <div
+                onPointerDown={preventSwitchEvents}
+                onMouseDown={preventSwitchEvents}
+                onClick={preventSwitchEvents}
+              >
+                <Switch
+                  checked={settings.multi_source_fetch}
+                  onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -328,11 +386,16 @@ export function PlaygroundSettings({
                   Automatically condense conversation context
                 </p>
               </div>
-              <Switch
-                checked={settings.condense_context}
-                onCheckedChange={(checked) => handleSwitchChange("condense_context", checked)}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+              <div
+                onPointerDown={preventSwitchEvents}
+                onMouseDown={preventSwitchEvents}
+                onClick={preventSwitchEvents}
+              >
+                <Switch
+                  checked={settings.condense_context}
+                  onCheckedChange={(checked) => handleSwitchChange("condense_context", checked)}
+                />
+              </div>
             </div>
           </AccordionContent>
         </AccordionItem>

@@ -90,6 +90,17 @@ export default function QueryPlayground() {
     updateFormField(field, value);
   };
 
+  // Comprehensive event prevention for sliders
+  const preventSliderEvents = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
+  // Comprehensive event prevention for switches
+  const preventSwitchEvents = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  };
+
   // Handle vector store selection
   const handleStoreSelection = (storeId: string, checked: boolean) => {
     setFormState((prev) => ({
@@ -321,22 +332,27 @@ export default function QueryPlayground() {
               </div>
 
               {/* Configuration Accordion */}
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion type="multiple" className="w-full">
                 {/* Retrieval Settings */}
                 <AccordionItem value="retrieval">
                   <AccordionTrigger>Retrieval Settings</AccordionTrigger>
                   <AccordionContent className="space-y-4">
                     <div className="space-y-2">
                       <Label>Top K: {formState.top_k}</Label>
-                      <Slider
-                        value={[formState.top_k]}
-                        onValueChange={([value]) => handleSliderChange("top_k", value)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        max={20}
-                        min={1}
-                        step={1}
-                        className="w-full"
-                      />
+                      <div
+                        onPointerDown={preventSliderEvents}
+                        onMouseDown={preventSliderEvents}
+                        onClick={preventSliderEvents}
+                      >
+                        <Slider
+                          value={[formState.top_k]}
+                          onValueChange={([value]) => handleSliderChange("top_k", value)}
+                          max={20}
+                          min={1}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Number of documents to retrieve
                       </p>
@@ -344,15 +360,20 @@ export default function QueryPlayground() {
 
                     <div className="space-y-2">
                       <Label>Similarity Threshold: {formState.similarity_threshold}</Label>
-                      <Slider
-                        value={[formState.similarity_threshold]}
-                        onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        max={1}
-                        min={0}
-                        step={0.01}
-                        className="w-full"
-                      />
+                      <div
+                        onPointerDown={preventSliderEvents}
+                        onMouseDown={preventSliderEvents}
+                        onClick={preventSliderEvents}
+                      >
+                        <Slider
+                          value={[formState.similarity_threshold]}
+                          onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
+                          max={1}
+                          min={0}
+                          step={0.01}
+                          className="w-full"
+                        />
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Minimum similarity score for retrieved documents
                       </p>
@@ -360,15 +381,20 @@ export default function QueryPlayground() {
 
                     <div className="space-y-2">
                       <Label>Max Docs for Context: {formState.max_docs_for_context}</Label>
-                      <Slider
-                        value={[formState.max_docs_for_context]}
-                        onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        max={10}
-                        min={1}
-                        step={1}
-                        className="w-full"
-                      />
+                      <div
+                        onPointerDown={preventSliderEvents}
+                        onMouseDown={preventSliderEvents}
+                        onClick={preventSliderEvents}
+                      >
+                        <Slider
+                          value={[formState.max_docs_for_context]}
+                          onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
+                          max={10}
+                          min={1}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Maximum number of documents to use for generating context
                       </p>
@@ -382,15 +408,20 @@ export default function QueryPlayground() {
                   <AccordionContent className="space-y-4">
                     <div className="space-y-2">
                       <Label>Temperature: {formState.temperature}</Label>
-                      <Slider
-                        value={[formState.temperature]}
-                        onValueChange={([value]) => handleSliderChange("temperature", value)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        max={1}
-                        min={0}
-                        step={0.01}
-                        className="w-full"
-                      />
+                      <div
+                        onPointerDown={preventSliderEvents}
+                        onMouseDown={preventSliderEvents}
+                        onClick={preventSliderEvents}
+                      >
+                        <Slider
+                          value={[formState.temperature]}
+                          onValueChange={([value]) => handleSliderChange("temperature", value)}
+                          max={1}
+                          min={0}
+                          step={0.01}
+                          className="w-full"
+                        />
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Controls randomness in responses (0 = focused, 1 = creative)
                       </p>
@@ -398,15 +429,20 @@ export default function QueryPlayground() {
 
                     <div className="space-y-2">
                       <Label>Max Tokens: {formState.max_tokens}</Label>
-                      <Slider
-                        value={[formState.max_tokens]}
-                        onValueChange={([value]) => handleSliderChange("max_tokens", value)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        max={MAX_COMPLETION_TOKENS}
-                        min={MIN_COMPLETION_TOKENS}
-                        step={TOKEN_STEP_SIZE}
-                        className="w-full"
-                      />
+                      <div
+                        onPointerDown={preventSliderEvents}
+                        onMouseDown={preventSliderEvents}
+                        onClick={preventSliderEvents}
+                      >
+                        <Slider
+                          value={[formState.max_tokens]}
+                          onValueChange={([value]) => handleSliderChange("max_tokens", value)}
+                          max={MAX_COMPLETION_TOKENS}
+                          min={MIN_COMPLETION_TOKENS}
+                          step={TOKEN_STEP_SIZE}
+                          className="w-full"
+                        />
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Maximum tokens for the response (up to {MAX_COMPLETION_TOKENS.toLocaleString()})
                       </p>
@@ -425,11 +461,16 @@ export default function QueryPlayground() {
                           Include source documents in the response
                         </p>
                       </div>
-                      <Switch
-                        checked={formState.include_sources}
-                        onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      />
+                      <div
+                        onPointerDown={preventSwitchEvents}
+                        onMouseDown={preventSwitchEvents}
+                        onClick={preventSwitchEvents}
+                      >
+                        <Switch
+                          checked={formState.include_sources}
+                          onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -439,11 +480,16 @@ export default function QueryPlayground() {
                           Include document metadata in the response
                         </p>
                       </div>
-                      <Switch
-                        checked={formState.include_metadata}
-                        onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      />
+                      <div
+                        onPointerDown={preventSwitchEvents}
+                        onMouseDown={preventSwitchEvents}
+                        onClick={preventSwitchEvents}
+                      >
+                        <Switch
+                          checked={formState.include_metadata}
+                          onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -453,11 +499,16 @@ export default function QueryPlayground() {
                           Include confidence scores in the response
                         </p>
                       </div>
-                      <Switch
-                        checked={formState.include_confidence}
-                        onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      />
+                      <div
+                        onPointerDown={preventSwitchEvents}
+                        onMouseDown={preventSwitchEvents}
+                        onClick={preventSwitchEvents}
+                      >
+                        <Switch
+                          checked={formState.include_confidence}
+                          onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -467,11 +518,16 @@ export default function QueryPlayground() {
                           Automatically expand query with related terms
                         </p>
                       </div>
-                      <Switch
-                        checked={formState.query_expansion}
-                        onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      />
+                      <div
+                        onPointerDown={preventSwitchEvents}
+                        onMouseDown={preventSwitchEvents}
+                        onClick={preventSwitchEvents}
+                      >
+                        <Switch
+                          checked={formState.query_expansion}
+                          onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -481,11 +537,16 @@ export default function QueryPlayground() {
                           Enable advanced reasoning chain for complex queries
                         </p>
                       </div>
-                      <Switch
-                        checked={formState.deep_reasoning || false}
-                        onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      />
+                      <div
+                        onPointerDown={preventSwitchEvents}
+                        onMouseDown={preventSwitchEvents}
+                        onClick={preventSwitchEvents}
+                      >
+                        <Switch
+                          checked={formState.deep_reasoning || false}
+                          onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
+                        />
+                      </div>
                     </div>
 
                     {/* Toggle for multi‑stage retrieval (related chunks) */}
@@ -496,11 +557,16 @@ export default function QueryPlayground() {
                           Perform multi-stage retrieval for related chunks
                         </p>
                       </div>
-                      <Switch
-                        checked={formState.multi_source_fetch || false}
-                        onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      />
+                      <div
+                        onPointerDown={preventSwitchEvents}
+                        onMouseDown={preventSwitchEvents}
+                        onClick={preventSwitchEvents}
+                      >
+                        <Switch
+                          checked={formState.multi_source_fetch || false}
+                          onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
+                        />
+                      </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
