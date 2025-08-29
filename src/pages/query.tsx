@@ -74,6 +74,22 @@ export default function QueryPlayground() {
     setFormState((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Wrapper for slider changes that prevents event propagation
+  const handleSliderChange = <K extends keyof QueryRequest>(
+    field: K,
+    value: QueryRequest[K]
+  ) => {
+    updateFormField(field, value);
+  };
+
+  // Wrapper for switch changes that prevents event propagation
+  const handleSwitchChange = <K extends keyof QueryRequest>(
+    field: K,
+    value: QueryRequest[K]
+  ) => {
+    updateFormField(field, value);
+  };
+
   // Handle vector store selection
   const handleStoreSelection = (storeId: string, checked: boolean) => {
     setFormState((prev) => ({
@@ -314,7 +330,8 @@ export default function QueryPlayground() {
                       <Label>Top K: {formState.top_k}</Label>
                       <Slider
                         value={[formState.top_k]}
-                        onValueChange={([value]) => updateFormField("top_k", value)}
+                        onValueChange={([value]) => handleSliderChange("top_k", value)}
+                        onPointerDown={(e) => e.stopPropagation()}
                         max={20}
                         min={1}
                         step={1}
@@ -329,7 +346,8 @@ export default function QueryPlayground() {
                       <Label>Similarity Threshold: {formState.similarity_threshold}</Label>
                       <Slider
                         value={[formState.similarity_threshold]}
-                        onValueChange={([value]) => updateFormField("similarity_threshold", value)}
+                        onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
+                        onPointerDown={(e) => e.stopPropagation()}
                         max={1}
                         min={0}
                         step={0.01}
@@ -344,7 +362,8 @@ export default function QueryPlayground() {
                       <Label>Max Docs for Context: {formState.max_docs_for_context}</Label>
                       <Slider
                         value={[formState.max_docs_for_context]}
-                        onValueChange={([value]) => updateFormField("max_docs_for_context", value)}
+                        onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
+                        onPointerDown={(e) => e.stopPropagation()}
                         max={10}
                         min={1}
                         step={1}
@@ -365,7 +384,8 @@ export default function QueryPlayground() {
                       <Label>Temperature: {formState.temperature}</Label>
                       <Slider
                         value={[formState.temperature]}
-                        onValueChange={([value]) => updateFormField("temperature", value)}
+                        onValueChange={([value]) => handleSliderChange("temperature", value)}
+                        onPointerDown={(e) => e.stopPropagation()}
                         max={1}
                         min={0}
                         step={0.01}
@@ -380,7 +400,8 @@ export default function QueryPlayground() {
                       <Label>Max Tokens: {formState.max_tokens}</Label>
                       <Slider
                         value={[formState.max_tokens]}
-                        onValueChange={([value]) => updateFormField("max_tokens", value)}
+                        onValueChange={([value]) => handleSliderChange("max_tokens", value)}
+                        onPointerDown={(e) => e.stopPropagation()}
                         max={MAX_COMPLETION_TOKENS}
                         min={MIN_COMPLETION_TOKENS}
                         step={TOKEN_STEP_SIZE}
@@ -406,7 +427,8 @@ export default function QueryPlayground() {
                       </div>
                       <Switch
                         checked={formState.include_sources}
-                        onCheckedChange={(checked) => updateFormField("include_sources", checked)}
+                        onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
+                        onPointerDown={(e) => e.stopPropagation()}
                       />
                     </div>
 
@@ -419,7 +441,8 @@ export default function QueryPlayground() {
                       </div>
                       <Switch
                         checked={formState.include_metadata}
-                        onCheckedChange={(checked) => updateFormField("include_metadata", checked)}
+                        onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
+                        onPointerDown={(e) => e.stopPropagation()}
                       />
                     </div>
 
@@ -432,7 +455,8 @@ export default function QueryPlayground() {
                       </div>
                       <Switch
                         checked={formState.include_confidence}
-                        onCheckedChange={(checked) => updateFormField("include_confidence", checked)}
+                        onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
+                        onPointerDown={(e) => e.stopPropagation()}
                       />
                     </div>
 
@@ -445,7 +469,8 @@ export default function QueryPlayground() {
                       </div>
                       <Switch
                         checked={formState.query_expansion}
-                        onCheckedChange={(checked) => updateFormField("query_expansion", checked)}
+                        onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
+                        onPointerDown={(e) => e.stopPropagation()}
                       />
                     </div>
 
@@ -458,7 +483,8 @@ export default function QueryPlayground() {
                       </div>
                       <Switch
                         checked={formState.deep_reasoning || false}
-                        onCheckedChange={(checked) => updateFormField("deep_reasoning", checked)}
+                        onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
+                        onPointerDown={(e) => e.stopPropagation()}
                       />
                     </div>
 
@@ -472,7 +498,8 @@ export default function QueryPlayground() {
                       </div>
                       <Switch
                         checked={formState.multi_source_fetch || false}
-                        onCheckedChange={(checked) => updateFormField("multi_source_fetch", checked)}
+                        onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
+                        onPointerDown={(e) => e.stopPropagation()}
                       />
                     </div>
                   </AccordionContent>

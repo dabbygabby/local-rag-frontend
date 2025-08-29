@@ -49,6 +49,30 @@ export function PlaygroundSettings({
     onChange({ ...settings, [field]: value });
   };
 
+  // Wrapper for slider changes that prevents event propagation
+  const handleSliderChange = <K extends keyof ChatSettings>(
+    field: K,
+    value: ChatSettings[K],
+    event?: React.PointerEvent
+  ) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    updateSetting(field, value);
+  };
+
+  // Wrapper for switch changes that prevents event propagation
+  const handleSwitchChange = <K extends keyof ChatSettings>(
+    field: K,
+    value: ChatSettings[K],
+    event?: React.PointerEvent
+  ) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    updateSetting(field, value);
+  };
+
   // Handle vector store selection
   const handleStoreSelection = (storeId: string, checked: boolean) => {
     const newStores = checked
@@ -125,7 +149,8 @@ export function PlaygroundSettings({
               <Label>Top K: {settings.top_k}</Label>
               <Slider
                 value={[settings.top_k]}
-                onValueChange={([value]) => updateSetting("top_k", value)}
+                onValueChange={([value]) => handleSliderChange("top_k", value)}
+                onPointerDown={(e) => e.stopPropagation()}
                 max={20}
                 min={1}
                 step={1}
@@ -140,7 +165,8 @@ export function PlaygroundSettings({
               <Label>Similarity Threshold: {settings.similarity_threshold}</Label>
               <Slider
                 value={[settings.similarity_threshold]}
-                onValueChange={([value]) => updateSetting("similarity_threshold", value)}
+                onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
+                onPointerDown={(e) => e.stopPropagation()}
                 max={1}
                 min={0}
                 step={0.01}
@@ -155,7 +181,8 @@ export function PlaygroundSettings({
               <Label>Max Docs for Context: {settings.max_docs_for_context}</Label>
               <Slider
                 value={[settings.max_docs_for_context]}
-                onValueChange={([value]) => updateSetting("max_docs_for_context", value)}
+                onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
+                onPointerDown={(e) => e.stopPropagation()}
                 max={10}
                 min={1}
                 step={1}
@@ -176,7 +203,8 @@ export function PlaygroundSettings({
               <Label>Temperature: {settings.temperature}</Label>
               <Slider
                 value={[settings.temperature]}
-                onValueChange={([value]) => updateSetting("temperature", value)}
+                onValueChange={([value]) => handleSliderChange("temperature", value)}
+                onPointerDown={(e) => e.stopPropagation()}
                 max={1}
                 min={0}
                 step={0.01}
@@ -191,7 +219,8 @@ export function PlaygroundSettings({
               <Label>Max Tokens: {settings.max_tokens}</Label>
               <Slider
                 value={[settings.max_tokens]}
-                onValueChange={([value]) => updateSetting("max_tokens", value)}
+                onValueChange={([value]) => handleSliderChange("max_tokens", value)}
+                onPointerDown={(e) => e.stopPropagation()}
                 max={MAX_COMPLETION_TOKENS}
                 min={MIN_COMPLETION_TOKENS}
                 step={TOKEN_STEP_SIZE}
@@ -217,7 +246,8 @@ export function PlaygroundSettings({
               </div>
               <Switch
                 checked={settings.include_sources}
-                onCheckedChange={(checked) => updateSetting("include_sources", checked)}
+                onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -230,7 +260,8 @@ export function PlaygroundSettings({
               </div>
               <Switch
                 checked={settings.include_metadata}
-                onCheckedChange={(checked) => updateSetting("include_metadata", checked)}
+                onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -243,7 +274,8 @@ export function PlaygroundSettings({
               </div>
               <Switch
                 checked={settings.include_confidence}
-                onCheckedChange={(checked) => updateSetting("include_confidence", checked)}
+                onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -256,7 +288,8 @@ export function PlaygroundSettings({
               </div>
               <Switch
                 checked={settings.query_expansion}
-                onCheckedChange={(checked) => updateSetting("query_expansion", checked)}
+                onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -269,7 +302,8 @@ export function PlaygroundSettings({
               </div>
               <Switch
                 checked={settings.deep_reasoning}
-                onCheckedChange={(checked) => updateSetting("deep_reasoning", checked)}
+                onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -282,7 +316,8 @@ export function PlaygroundSettings({
               </div>
               <Switch
                 checked={settings.multi_source_fetch}
-                onCheckedChange={(checked) => updateSetting("multi_source_fetch", checked)}
+                onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -295,7 +330,8 @@ export function PlaygroundSettings({
               </div>
               <Switch
                 checked={settings.condense_context}
-                onCheckedChange={(checked) => updateSetting("condense_context", checked)}
+                onCheckedChange={(checked) => handleSwitchChange("condense_context", checked)}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
           </AccordionContent>
