@@ -37,6 +37,7 @@ export default function QueryPlayground() {
     vector_stores: [],
     metadata_filters: {},
     deep_reasoning: false,          // <-- NEW state property
+    multi_source_fetch: true,       // <-- NEW state property (default = true)
   });
 
   // Query execution state
@@ -446,6 +447,20 @@ export default function QueryPlayground() {
                       <Switch
                         checked={formState.deep_reasoning || false}
                         onCheckedChange={(checked) => updateFormField("deep_reasoning", checked)}
+                      />
+                    </div>
+
+                    {/* Toggle for multi‑stage retrieval (related chunks) */}
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Enable multi-source retrieval</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Perform multi-stage retrieval for related chunks
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formState.multi_source_fetch || false}
+                        onCheckedChange={(checked) => updateFormField("multi_source_fetch", checked)}
                       />
                     </div>
                   </AccordionContent>

@@ -100,6 +100,8 @@ export interface QueryRequest {
   metadata_filters?: Record<string, unknown>;
   /** When true the backend runs the deep‑reasoning chain. */
   deep_reasoning?: boolean;   // <-- NEW FIELD (default = false on server)
+  /** When true enables multi‑stage retrieval for related chunks. */
+  multi_source_fetch?: boolean; // <-- NEW FIELD (default = true)
 }
 
 export interface SourceDocument {
