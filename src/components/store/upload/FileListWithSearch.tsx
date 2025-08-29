@@ -48,7 +48,7 @@ export function FileListWithSearch({
     });
   }, [files, searchTerm, variant]);
 
-  // Calculate selection stats
+  // Calculate selection stats for filtered files only
   const pendingFiles = filteredFiles.filter(f => f.status === "pending");
   const selectedCount = pendingFiles.filter(f => f.selected).length;
   const allPendingSelected = pendingFiles.length > 0 && pendingFiles.every(f => f.selected);
@@ -56,6 +56,22 @@ export function FileListWithSearch({
   const clearSearch = () => {
     setSearchTerm("");
     onClearSearch?.();
+  };
+
+  // Handle select all for filtered files only
+  const handleToggleSelectAll = () => {
+    const shouldSelectAll = !allPendingSelected;
+    
+    // Toggle selection for each pending file in the filtered results
+    pendingFiles.forEach((file) => {
+      const fileKey = variant === "folder" ? (file as FolderUploadStatus).originalPath : files.indexOf(file);
+      const currentlySelected = file.selected || false;
+      
+      // Only toggle if the selection state needs to change
+      if (currentlySelected !== shouldSelectAll) {
+        onToggleSelection(fileKey);
+      }
+    });
   };
 
   if (files.length === 0) return null;
@@ -91,7 +107,7 @@ export function FileListWithSearch({
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={allPendingSelected}
-                onCheckedChange={onToggleSelectAll}
+                onCheckedChange={handleToggleSelectAll}
                 className="h-4 w-4"
               />
               <span className="text-sm text-muted-foreground">
