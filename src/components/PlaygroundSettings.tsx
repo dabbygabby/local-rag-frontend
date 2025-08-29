@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -65,16 +65,7 @@ export function PlaygroundSettings({
     updateSetting(field, value);
   };
 
-  // Comprehensive event prevention for sliders
-  const preventSliderEvents = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
 
-  // Comprehensive event prevention for switches
-  const preventSwitchEvents = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-  };
 
   // Handle vector store selection
   const handleStoreSelection = (storeId: string, checked: boolean) => {
@@ -142,264 +133,189 @@ export function PlaygroundSettings({
         )}
       </div>
 
-      {/* Configuration Accordion */}
-      <Accordion type="multiple" className="w-full">
-        {/* Retrieval Settings */}
-        <AccordionItem value="retrieval">
-          <AccordionTrigger>Retrieval Settings</AccordionTrigger>
-          <AccordionContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Top K: {settings.top_k}</Label>
-              <div
-                onPointerDown={preventSliderEvents}
-                onMouseDown={preventSliderEvents}
-                onClick={preventSliderEvents}
-              >
-                <Slider
-                  value={[settings.top_k]}
-                  onValueChange={([value]) => handleSliderChange("top_k", value)}
-                  max={20}
-                  min={1}
-                  step={1}
-                  className="w-full"
-                />
-              </div>
+      {/* Settings Tabs */}
+      <Tabs defaultValue="retrieval" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="retrieval">Retrieval</TabsTrigger>
+          <TabsTrigger value="generation">Generation</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        </TabsList>
+
+        {/* Retrieval Settings Tab */}
+        <TabsContent value="retrieval" className="space-y-4 mt-6">
+          <div className="space-y-2">
+            <Label>Top K: {settings.top_k}</Label>
+            <Slider
+              value={[settings.top_k]}
+              onValueChange={([value]) => handleSliderChange("top_k", value)}
+              max={20}
+              min={1}
+              step={1}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Number of documents to retrieve
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Similarity Threshold: {settings.similarity_threshold}</Label>
+            <Slider
+              value={[settings.similarity_threshold]}
+              onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
+              max={1}
+              min={0}
+              step={0.01}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Minimum similarity score for retrieved documents
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Max Docs for Context: {settings.max_docs_for_context}</Label>
+            <Slider
+              value={[settings.max_docs_for_context]}
+              onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
+              max={10}
+              min={1}
+              step={1}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Maximum number of documents to use for generating context
+            </p>
+          </div>
+        </TabsContent>
+
+        {/* Generation Settings Tab */}
+        <TabsContent value="generation" className="space-y-4 mt-6">
+          <div className="space-y-2">
+            <Label>Temperature: {settings.temperature}</Label>
+            <Slider
+              value={[settings.temperature]}
+              onValueChange={([value]) => handleSliderChange("temperature", value)}
+              max={1}
+              min={0}
+              step={0.01}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Controls randomness in responses (0 = focused, 1 = creative)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Max Tokens: {settings.max_tokens}</Label>
+            <Slider
+              value={[settings.max_tokens]}
+              onValueChange={([value]) => handleSliderChange("max_tokens", value)}
+              max={MAX_COMPLETION_TOKENS}
+              min={MIN_COMPLETION_TOKENS}
+              step={TOKEN_STEP_SIZE}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Maximum tokens for the response (up to {MAX_COMPLETION_TOKENS.toLocaleString()})
+            </p>
+          </div>
+        </TabsContent>
+
+        {/* Advanced Options Tab */}
+        <TabsContent value="advanced" className="space-y-4 mt-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Include Sources</Label>
               <p className="text-xs text-muted-foreground">
-                Number of documents to retrieve
+                Include source documents in the response
               </p>
             </div>
+            <Switch
+              checked={settings.include_sources}
+              onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label>Similarity Threshold: {settings.similarity_threshold}</Label>
-              <div
-                onPointerDown={preventSliderEvents}
-                onMouseDown={preventSliderEvents}
-                onClick={preventSliderEvents}
-              >
-                <Slider
-                  value={[settings.similarity_threshold]}
-                  onValueChange={([value]) => handleSliderChange("similarity_threshold", value)}
-                  max={1}
-                  min={0}
-                  step={0.01}
-                  className="w-full"
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Include Metadata</Label>
               <p className="text-xs text-muted-foreground">
-                Minimum similarity score for retrieved documents
+                Include document metadata in the response
               </p>
             </div>
+            <Switch
+              checked={settings.include_metadata}
+              onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label>Max Docs for Context: {settings.max_docs_for_context}</Label>
-              <div
-                onPointerDown={preventSliderEvents}
-                onMouseDown={preventSliderEvents}
-                onClick={preventSliderEvents}
-              >
-                <Slider
-                  value={[settings.max_docs_for_context]}
-                  onValueChange={([value]) => handleSliderChange("max_docs_for_context", value)}
-                  max={10}
-                  min={1}
-                  step={1}
-                  className="w-full"
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Include Confidence</Label>
               <p className="text-xs text-muted-foreground">
-                Maximum number of documents to use for generating context
+                Include confidence scores in the response
               </p>
             </div>
-          </AccordionContent>
-        </AccordionItem>
+            <Switch
+              checked={settings.include_confidence}
+              onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
+            />
+          </div>
 
-        {/* Generation Settings */}
-        <AccordionItem value="generation">
-          <AccordionTrigger>Generation Settings</AccordionTrigger>
-          <AccordionContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Temperature: {settings.temperature}</Label>
-              <div
-                onPointerDown={preventSliderEvents}
-                onMouseDown={preventSliderEvents}
-                onClick={preventSliderEvents}
-              >
-                <Slider
-                  value={[settings.temperature]}
-                  onValueChange={([value]) => handleSliderChange("temperature", value)}
-                  max={1}
-                  min={0}
-                  step={0.01}
-                  className="w-full"
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Query Expansion</Label>
               <p className="text-xs text-muted-foreground">
-                Controls randomness in responses (0 = focused, 1 = creative)
+                Automatically expand query with related terms
               </p>
             </div>
+            <Switch
+              checked={settings.query_expansion}
+              onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label>Max Tokens: {settings.max_tokens}</Label>
-              <div
-                onPointerDown={preventSliderEvents}
-                onMouseDown={preventSliderEvents}
-                onClick={preventSliderEvents}
-              >
-                <Slider
-                  value={[settings.max_tokens]}
-                  onValueChange={([value]) => handleSliderChange("max_tokens", value)}
-                  max={MAX_COMPLETION_TOKENS}
-                  min={MIN_COMPLETION_TOKENS}
-                  step={TOKEN_STEP_SIZE}
-                  className="w-full"
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Deep Reasoning</Label>
               <p className="text-xs text-muted-foreground">
-                Maximum tokens for the response (up to {MAX_COMPLETION_TOKENS.toLocaleString()})
+                Enable advanced reasoning chain for complex queries
               </p>
             </div>
-          </AccordionContent>
-        </AccordionItem>
+            <Switch
+              checked={settings.deep_reasoning}
+              onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
+            />
+          </div>
 
-        {/* Advanced Options */}
-        <AccordionItem value="advanced">
-          <AccordionTrigger>Advanced Options</AccordionTrigger>
-          <AccordionContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Include Sources</Label>
-                <p className="text-xs text-muted-foreground">
-                  Include source documents in the response
-                </p>
-              </div>
-              <div
-                onPointerDown={preventSwitchEvents}
-                onMouseDown={preventSwitchEvents}
-                onClick={preventSwitchEvents}
-              >
-                <Switch
-                  checked={settings.include_sources}
-                  onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Multi-source Retrieval</Label>
+              <p className="text-xs text-muted-foreground">
+                Perform multi-stage retrieval for related chunks
+              </p>
             </div>
+            <Switch
+              checked={settings.multi_source_fetch}
+              onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
+            />
+          </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Include Metadata</Label>
-                <p className="text-xs text-muted-foreground">
-                  Include document metadata in the response
-                </p>
-              </div>
-              <div
-                onPointerDown={preventSwitchEvents}
-                onMouseDown={preventSwitchEvents}
-                onClick={preventSwitchEvents}
-              >
-                <Switch
-                  checked={settings.include_metadata}
-                  onCheckedChange={(checked) => handleSwitchChange("include_metadata", checked)}
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Condense Context</Label>
+              <p className="text-xs text-muted-foreground">
+                Automatically condense conversation context
+              </p>
             </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Include Confidence</Label>
-                <p className="text-xs text-muted-foreground">
-                  Include confidence scores in the response
-                </p>
-              </div>
-              <div
-                onPointerDown={preventSwitchEvents}
-                onMouseDown={preventSwitchEvents}
-                onClick={preventSwitchEvents}
-              >
-                <Switch
-                  checked={settings.include_confidence}
-                  onCheckedChange={(checked) => handleSwitchChange("include_confidence", checked)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Query Expansion</Label>
-                <p className="text-xs text-muted-foreground">
-                  Automatically expand query with related terms
-                </p>
-              </div>
-              <div
-                onPointerDown={preventSwitchEvents}
-                onMouseDown={preventSwitchEvents}
-                onClick={preventSwitchEvents}
-              >
-                <Switch
-                  checked={settings.query_expansion}
-                  onCheckedChange={(checked) => handleSwitchChange("query_expansion", checked)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Deep Reasoning</Label>
-                <p className="text-xs text-muted-foreground">
-                  Enable advanced reasoning chain for complex queries
-                </p>
-              </div>
-              <div
-                onPointerDown={preventSwitchEvents}
-                onMouseDown={preventSwitchEvents}
-                onClick={preventSwitchEvents}
-              >
-                <Switch
-                  checked={settings.deep_reasoning}
-                  onCheckedChange={(checked) => handleSwitchChange("deep_reasoning", checked)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Multi-source Retrieval</Label>
-                <p className="text-xs text-muted-foreground">
-                  Perform multi-stage retrieval for related chunks
-                </p>
-              </div>
-              <div
-                onPointerDown={preventSwitchEvents}
-                onMouseDown={preventSwitchEvents}
-                onClick={preventSwitchEvents}
-              >
-                <Switch
-                  checked={settings.multi_source_fetch}
-                  onCheckedChange={(checked) => handleSwitchChange("multi_source_fetch", checked)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Condense Context</Label>
-                <p className="text-xs text-muted-foreground">
-                  Automatically condense conversation context
-                </p>
-              </div>
-              <div
-                onPointerDown={preventSwitchEvents}
-                onMouseDown={preventSwitchEvents}
-                onClick={preventSwitchEvents}
-              >
-                <Switch
-                  checked={settings.condense_context}
-                  onCheckedChange={(checked) => handleSwitchChange("condense_context", checked)}
-                />
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+            <Switch
+              checked={settings.condense_context}
+              onCheckedChange={(checked) => handleSwitchChange("condense_context", checked)}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 
@@ -438,7 +354,7 @@ export function PlaygroundSettings({
   // Default: sheet variant
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-[400px] overflow-y-auto">
+      <SheetContent side="right" className="w-[600px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
