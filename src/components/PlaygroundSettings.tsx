@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,15 @@ export function PlaygroundSettings({
   variant = "sheet",
   title = "Chat Settings"
 }: PlaygroundSettingsProps) {
+  // Tab state for debugging
+  const [activeTab, setActiveTab] = useState("retrieval");
+
+  console.log("🔧 PlaygroundSettings RENDER:", {
+    variant,
+    open,
+    activeTab,
+    timestamp: new Date().toISOString()
+  });
   // Fetch available vector stores for the dropdown
   const {
     data: vectorStores,
@@ -46,7 +56,15 @@ export function PlaygroundSettings({
     field: K,
     value: ChatSettings[K]
   ) => {
+    console.log("📝 updateSetting CALLED:", {
+      field,
+      value,
+      activeTab,
+      variant,
+      timestamp: new Date().toISOString()
+    });
     onChange({ ...settings, [field]: value });
+    console.log("✅ updateSetting COMPLETED:", { field, value });
   };
 
   // Wrapper for slider changes that prevents event propagation
@@ -54,6 +72,13 @@ export function PlaygroundSettings({
     field: K,
     value: ChatSettings[K]
   ) => {
+    console.log("🎚️ handleSliderChange CALLED:", {
+      field,
+      value,
+      activeTab,
+      variant,
+      timestamp: new Date().toISOString()
+    });
     updateSetting(field, value);
   };
 
@@ -62,6 +87,13 @@ export function PlaygroundSettings({
     field: K,
     value: ChatSettings[K]
   ) => {
+    console.log("🔘 handleSwitchChange CALLED:", {
+      field,
+      value,
+      activeTab,
+      variant,
+      timestamp: new Date().toISOString()
+    });
     updateSetting(field, value);
   };
 
@@ -69,11 +101,58 @@ export function PlaygroundSettings({
 
   // Handle vector store selection
   const handleStoreSelection = (storeId: string, checked: boolean) => {
+    console.log("🏪 handleStoreSelection CALLED:", {
+      storeId,
+      checked,
+      activeTab,
+      variant,
+      timestamp: new Date().toISOString()
+    });
     const newStores = checked
       ? [...settings.vector_stores, storeId]
       : settings.vector_stores.filter((id) => id !== storeId);
     updateSetting("vector_stores", newStores);
   };
+
+  // Tab change handler
+  const handleTabChange = (newTab: string) => {
+    console.log("📑 TAB CHANGE:", {
+      from: activeTab,
+      to: newTab,
+      variant,
+      timestamp: new Date().toISOString()
+    });
+    setActiveTab(newTab);
+  };
+
+  // Effect to track external re-renders
+  useEffect(() => {
+    console.log("🔄 PlaygroundSettings EFFECT:", {
+      open,
+      activeTab,
+      variant,
+      settingsChanged: JSON.stringify(settings).length,
+      timestamp: new Date().toISOString()
+    });
+  }, [open, settings, activeTab, variant]);
+
+  // Effect to track component mount/unmount
+  useEffect(() => {
+    console.log("🚀 PlaygroundSettings MOUNTED");
+    return () => {
+      console.log("💀 PlaygroundSettings UNMOUNTED");
+    };
+  }, []);
+
+  // Effect to track settings changes specifically
+  useEffect(() => {
+    console.log("⚙️ SETTINGS CHANGED:", {
+      settings: JSON.stringify(settings, null, 2),
+      activeTab,
+      variant,
+      timestamp: new Date().toISOString()
+    });
+  }, [settings]);
 
   const SettingsContent = () => (
     <div className="space-y-6">
@@ -134,7 +213,7 @@ export function PlaygroundSettings({
       </div>
 
       {/* Settings Tabs */}
-      <Tabs defaultValue="retrieval" className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="retrieval">Retrieval</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
@@ -147,7 +226,10 @@ export function PlaygroundSettings({
             <Label>Top K: {settings.top_k}</Label>
             <Slider
               value={[settings.top_k]}
-              onValueChange={([value]) => handleSliderChange("top_k", value)}
+              onValueChange={([value]) => {
+                console.log("🎚️ TOP_K SLIDER onChange:", { value, activeTab });
+                handleSliderChange("top_k", value);
+              }}
               max={20}
               min={1}
               step={1}
@@ -195,7 +277,10 @@ export function PlaygroundSettings({
             <Label>Temperature: {settings.temperature}</Label>
             <Slider
               value={[settings.temperature]}
-              onValueChange={([value]) => handleSliderChange("temperature", value)}
+              onValueChange={([value]) => {
+                console.log("🎚️ TEMPERATURE SLIDER onChange:", { value, activeTab });
+                handleSliderChange("temperature", value);
+              }}
               max={1}
               min={0}
               step={0.01}
@@ -233,7 +318,10 @@ export function PlaygroundSettings({
             </div>
             <Switch
               checked={settings.include_sources}
-              onCheckedChange={(checked) => handleSwitchChange("include_sources", checked)}
+              onCheckedChange={(checked) => {
+                console.log("🔘 INCLUDE_SOURCES SWITCH onChange:", { checked, activeTab });
+                handleSwitchChange("include_sources", checked);
+              }}
             />
           </div>
 

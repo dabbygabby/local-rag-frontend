@@ -231,7 +231,13 @@ export default function ChatPage() {
         open={showSettings}
         onClose={() => setShowSettings(false)}
         settings={settings}
-        onChange={setSettings}
+        onChange={(newSettings) => {
+          console.log("💬 CHAT PAGE onChange:", {
+            newSettings,
+            timestamp: new Date().toISOString()
+          });
+          setSettings(newSettings);
+        }}
         variant="sheet"
         title="Chat Settings"
       />
