@@ -138,8 +138,9 @@ export interface QueryResponse {
 export interface FileUploadStatus {
   file: File;
   progress: number;
-  status: "uploading" | "success" | "error";
+  status: "pending" | "uploading" | "success" | "error";
   message?: string;
+  selected?: boolean;
 }
 
 // Folder Upload Types
@@ -150,6 +151,7 @@ export interface FolderUploadStatus {
   status: "pending" | "processing" | "uploading" | "success" | "error";
   message?: string;
   language?: string;
+  selected?: boolean;
 }
 
 // Upload Response Types

@@ -1,4 +1,5 @@
 import { Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { MetadataInput } from "./MetadataInput";
 import { UploadProgress } from "./UploadProgress";
 import { FileUploadStatus, UploadFileResult } from "@/types/api";
@@ -12,6 +13,10 @@ interface FileUploadTabProps {
   setUploadMetadata: (metadata: string) => void;
   setUploadFiles: (files: FileUploadStatus[]) => void;
   uploadResults: UploadFileResult[];
+  uploadPendingFiles?: () => void;
+  toggleFileSelection?: (index: number) => void;
+  toggleSelectAll?: () => void;
+  removeSelectedFiles?: () => void;
 }
 
 export function FileUploadTab({
@@ -23,6 +28,10 @@ export function FileUploadTab({
   setUploadMetadata,
   setUploadFiles,
   uploadResults,
+  uploadPendingFiles,
+  toggleFileSelection,
+  toggleSelectAll,
+  removeSelectedFiles,
 }: FileUploadTabProps) {
   return (
     <div className="space-y-4">
@@ -58,7 +67,24 @@ export function FileUploadTab({
       <UploadProgress
         uploadFiles={uploadFiles}
         onClearList={() => setUploadFiles([])}
+        onToggleSelection={toggleFileSelection}
+        onToggleSelectAll={toggleSelectAll}
+        onRemoveSelected={removeSelectedFiles}
       />
+
+      {/* Upload Button */}
+      {uploadFiles.some(f => f.status === "pending") && uploadPendingFiles && (
+        <div className="flex justify-center pt-2">
+          <Button 
+            onClick={uploadPendingFiles}
+            className="w-full"
+            disabled={uploadFiles.some(f => f.status === "uploading")}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload {uploadFiles.filter(f => f.status === "pending").length} Files
+          </Button>
+        </div>
+      )}
 
       {/* Upload Results with Status Badges */}
       {uploadResults.length > 0 && (

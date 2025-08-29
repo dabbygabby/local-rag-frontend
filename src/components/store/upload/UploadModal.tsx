@@ -25,6 +25,10 @@ interface UploadModalProps {
   uploadFiles: FileUploadStatus[];
   setUploadFiles: (files: FileUploadStatus[]) => void;
   uploadResults: UploadFileResult[];
+  uploadPendingFiles?: () => void;
+  toggleFileSelection?: (index: number) => void;
+  toggleSelectAll?: () => void;
+  removeSelectedFiles?: () => void;
   
   // Text upload props
   textUpload: string;
@@ -48,6 +52,9 @@ interface UploadModalProps {
   setFolderStats: (stats: { totalFiles: number; totalSize: number; fileTypes: Record<string, number>; ignoredFiles: number; } | null) => void;
   removeFolderFile: (originalPath: string) => void;
   uploadFolderFiles: () => void;
+  toggleFolderFileSelection?: (originalPath: string) => void;
+  toggleSelectAllFolderFiles?: () => void;
+  removeSelectedFolderFiles?: () => void;
   
   // Common props
   uploadMetadata: string;
@@ -67,6 +74,10 @@ export function UploadModal({
   uploadFiles,
   setUploadFiles,
   uploadResults,
+  uploadPendingFiles,
+  toggleFileSelection,
+  toggleSelectAll,
+  removeSelectedFiles,
   
   // Text upload props
   textUpload,
@@ -85,6 +96,9 @@ export function UploadModal({
   setFolderStats,
   removeFolderFile,
   uploadFolderFiles,
+  toggleFolderFileSelection,
+  toggleSelectAllFolderFiles,
+  removeSelectedFolderFiles,
   
   // Common props
   uploadMetadata,
@@ -164,6 +178,10 @@ export function UploadModal({
             setUploadMetadata={setUploadMetadata}
             setUploadFiles={setUploadFiles}
             uploadResults={uploadResults}
+            uploadPendingFiles={uploadPendingFiles}
+            toggleFileSelection={toggleFileSelection}
+            toggleSelectAll={toggleSelectAll}
+            removeSelectedFiles={removeSelectedFiles}
           />
         )}
 
@@ -191,6 +209,9 @@ export function UploadModal({
             setFolderFiles={setFolderFiles}
             removeFolderFile={removeFolderFile}
             uploadFolderFiles={uploadFolderFiles}
+            toggleFolderFileSelection={toggleFolderFileSelection}
+            toggleSelectAllFolderFiles={toggleSelectAllFolderFiles}
+            removeSelectedFolderFiles={removeSelectedFolderFiles}
           />
         )}
       </DialogContent>

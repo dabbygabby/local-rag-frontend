@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { FolderUploadStatus } from "@/types/api";
 import { MetadataInput } from "./MetadataInput";
 import { FolderStats } from "./FolderStats";
+import { FileListWithSearch } from "./FileListWithSearch";
 
 interface FolderUploadTabProps {
   handleFolderUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -22,6 +23,9 @@ interface FolderUploadTabProps {
   setFolderFiles: (files: FolderUploadStatus[]) => void;
   removeFolderFile: (originalPath: string) => void;
   uploadFolderFiles: () => void;
+  toggleFolderFileSelection?: (originalPath: string) => void;
+  toggleSelectAllFolderFiles?: () => void;
+  removeSelectedFolderFiles?: () => void;
 }
 
 export function FolderUploadTab({
@@ -34,6 +38,9 @@ export function FolderUploadTab({
   setFolderFiles,
   removeFolderFile,
   uploadFolderFiles,
+  toggleFolderFileSelection,
+  toggleSelectAllFolderFiles,
+  removeSelectedFolderFiles,
 }: FolderUploadTabProps) {
   return (
     <div className="space-y-4">
@@ -124,59 +131,70 @@ export function FolderUploadTab({
             </div>
           </div>
           
-          <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
-            {folderFiles.map((folderFile, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Badge variant="outline" className="text-xs shrink-0">
-                      {folderFile.language}
-                    </Badge>
-                    <span className="truncate font-mono text-xs">
-                      {folderFile.originalPath}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`text-xs ${
-                        folderFile.status === "success"
-                          ? "text-green-600"
-                          : folderFile.status === "error"
-                          ? "text-red-600"
-                          : folderFile.status === "uploading"
-                          ? "text-blue-600"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {folderFile.status === "success"
-                        ? "✅ Complete"
-                        : folderFile.status === "error"
-                        ? "❌ Failed"
-                        : folderFile.status === "uploading"
-                        ? `${Math.round(folderFile.progress)}%`
-                        : "⏳ Pending"}
-                    </span>
-                    {/* Remove button - only show if not uploading or completed */}
-                    {folderFile.status === "pending" && (
-                      <button
-                        onClick={() => removeFolderFile(folderFile.originalPath)}
-                        className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-sm transition-colors"
-                        title="Remove file from upload list"
+          {toggleFolderFileSelection && toggleSelectAllFolderFiles && removeSelectedFolderFiles ? (
+            <FileListWithSearch
+              files={folderFiles}
+              onToggleSelection={toggleFolderFileSelection}
+              onToggleSelectAll={toggleSelectAllFolderFiles}
+              onRemoveSelected={removeSelectedFolderFiles}
+              variant="folder"
+            />
+          ) : (
+            /* Fallback to original simple list */
+            <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
+              {folderFiles.map((folderFile, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {folderFile.language}
+                      </Badge>
+                      <span className="truncate font-mono text-xs">
+                        {folderFile.originalPath}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`text-xs ${
+                          folderFile.status === "success"
+                            ? "text-green-600"
+                            : folderFile.status === "error"
+                            ? "text-red-600"
+                            : folderFile.status === "uploading"
+                            ? "text-blue-600"
+                            : "text-muted-foreground"
+                        }`}
                       >
-                        <X className="h-3 w-3 text-red-500 hover:text-red-700" />
-                      </button>
-                    )}
+                        {folderFile.status === "success"
+                          ? "✅ Complete"
+                          : folderFile.status === "error"
+                          ? "❌ Failed"
+                          : folderFile.status === "uploading"
+                          ? `${Math.round(folderFile.progress)}%`
+                          : "⏳ Pending"}
+                      </span>
+                      {/* Remove button - only show if not uploading or completed */}
+                      {folderFile.status === "pending" && (
+                        <button
+                          onClick={() => removeFolderFile(folderFile.originalPath)}
+                          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-sm transition-colors"
+                          title="Remove file from upload list"
+                        >
+                          <X className="h-3 w-3 text-red-500 hover:text-red-700" />
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {folderFile.status === "uploading" && (
+                    <Progress value={folderFile.progress} className="h-1" />
+                  )}
+                  {folderFile.message && (
+                    <p className="text-xs text-red-600 pl-2">{folderFile.message}</p>
+                  )}
                 </div>
-                {folderFile.status === "uploading" && (
-                  <Progress value={folderFile.progress} className="h-1" />
-                )}
-                {folderFile.message && (
-                  <p className="text-xs text-red-600 pl-2">{folderFile.message}</p>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

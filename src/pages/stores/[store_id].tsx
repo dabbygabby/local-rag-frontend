@@ -68,6 +68,10 @@ export default function StoreDetailPage() {
     getRootProps,
     getInputProps,
     isDragActive,
+    uploadPendingFiles,
+    toggleFileSelection,
+    toggleSelectAll,
+    removeSelectedFiles,
   } = useFileUpload(store_id as string, refetchDocuments, setShowUploadModal);
 
   // Text upload functionality
@@ -90,6 +94,9 @@ export default function StoreDetailPage() {
     handleFolderUpload,
     removeFolderFile,
     uploadFolderFiles,
+    toggleFolderFileSelection,
+    toggleSelectAllFolderFiles,
+    removeSelectedFolderFiles,
   } = useFolderUpload(store_id as string, uploadMetadata, refetchDocuments, setShowUploadModal);
 
   // Document actions
@@ -234,6 +241,10 @@ export default function StoreDetailPage() {
         uploadFiles={uploadFiles}
         setUploadFiles={setUploadFiles}
         uploadResults={uploadResults}
+        uploadPendingFiles={uploadPendingFiles}
+        toggleFileSelection={toggleFileSelection}
+        toggleSelectAll={toggleSelectAll}
+        removeSelectedFiles={removeSelectedFiles}
         
         // Text upload props
         textUpload={textUpload}
@@ -252,6 +263,9 @@ export default function StoreDetailPage() {
         setFolderStats={setFolderStats}
         removeFolderFile={removeFolderFile}
         uploadFolderFiles={uploadFolderFiles}
+        toggleFolderFileSelection={toggleFolderFileSelection}
+        toggleSelectAllFolderFiles={toggleSelectAllFolderFiles}
+        removeSelectedFolderFiles={removeSelectedFolderFiles}
         
         // Common props
         uploadMetadata={uploadMetadata}

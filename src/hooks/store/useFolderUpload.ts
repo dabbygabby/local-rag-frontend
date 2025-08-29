@@ -62,6 +62,7 @@ export function useFolderUpload(storeId: string | undefined, uploadMetadata: str
         progress: 0,
         status: "pending",
         language: pf.language,
+        selected: false,
       }));
 
       setFolderFiles(folderUploads);
@@ -197,6 +198,44 @@ export function useFolderUpload(storeId: string | undefined, uploadMetadata: str
     }
   };
 
+  // Toggle selection for a specific folder file
+  const toggleFolderFileSelection = (originalPath: string) => {
+    setFolderFiles(prev => 
+      prev.map(file => 
+        file.originalPath === originalPath && file.status === "pending"
+          ? { ...file, selected: !file.selected }
+          : file
+      )
+    );
+  };
+
+  // Select/deselect all pending folder files
+  const toggleSelectAllFolderFiles = () => {
+    const pendingFiles = folderFiles.filter(f => f.status === "pending");
+    const allPendingSelected = pendingFiles.length > 0 && pendingFiles.every(f => f.selected);
+    
+    setFolderFiles(prev => 
+      prev.map(file => 
+        file.status === "pending"
+          ? { ...file, selected: !allPendingSelected }
+          : file
+      )
+    );
+  };
+
+  // Remove selected folder files
+  const removeSelectedFolderFiles = () => {
+    const filesToRemove = folderFiles.filter(f => f.selected && f.status === "pending");
+    if (filesToRemove.length === 0) return;
+
+    setFolderFiles(prev => prev.filter(f => !(f.selected && f.status === "pending")));
+    
+    toast({
+      title: "Files removed",
+      description: `${filesToRemove.length} file(s) removed from folder upload list.`,
+    });
+  };
+
   return {
     folderFiles,
     setFolderFiles,
@@ -206,5 +245,8 @@ export function useFolderUpload(storeId: string | undefined, uploadMetadata: str
     handleFolderUpload,
     removeFolderFile,
     uploadFolderFiles,
+    toggleFolderFileSelection,
+    toggleSelectAllFolderFiles,
+    removeSelectedFolderFiles,
   };
 }

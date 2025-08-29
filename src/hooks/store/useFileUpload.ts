@@ -40,14 +40,25 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
       return; // All files were duplicates
     }
 
-    // Create upload status entries
+    // Create upload status entries in pending state
     const newUploads: FileUploadStatus[] = newFiles.map(({ file }) => ({
       file,
       progress: 0,
-      status: "uploading",
+      status: "pending" as const,
+      selected: false,
     }));
 
     setUploadFiles((prev) => [...prev, ...newUploads]);
+
+    // Store hashes for future upload
+    const newHashes = newFiles.map(({ hash }) => hash);
+    setUploadedHashes((prev) => new Set([...prev, ...newHashes]));
+  };
+
+  // Upload pending files
+  const uploadPendingFiles = async () => {
+    const pendingFiles = uploadFiles.filter(f => f.status === "pending");
+    if (pendingFiles.length === 0) return;
 
     // Parse metadata if provided
     let parsedMetadata: Record<string, unknown> | undefined;
@@ -64,11 +75,20 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
       });
     }
 
+    // Update status to uploading
+    setUploadFiles(prev => 
+      prev.map(file => 
+        file.status === "pending" 
+          ? { ...file, status: "uploading" as const, progress: 0 }
+          : file
+      )
+    );
+
     try {
-      // Upload all files at once using the new hash-based API
+      // Upload all pending files at once using the new hash-based API
       const response = await vectorStoreApi.uploadFiles(
         storeId as string,
-        newFiles.map(({ file }) => file),
+        pendingFiles.map(f => f.file),
         parsedMetadata
       );
 
@@ -76,17 +96,13 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
       const results = response.files;
       setUploadResults(results);
 
-      // Update uploaded hashes set
-      const newHashes = newFiles.map(({ hash }) => hash);
-      setUploadedHashes((prev) => new Set([...prev, ...newHashes]));
-
       // Update upload status for all files to success
       setUploadFiles((prev) =>
-        prev.map((upload) => ({
-          ...upload,
-          status: "success" as const,
-          progress: 100,
-        }))
+        prev.map((upload) => 
+          upload.status === "uploading"
+            ? { ...upload, status: "success" as const, progress: 100 }
+            : upload
+        )
       );
 
       // Show summary toast
@@ -110,13 +126,17 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
       // Close the upload modal after successful upload
       setShowUploadModal(false);
     } catch (error) {
-      // Update all files as failed
+      // Update all uploading files as failed
       setUploadFiles((prev) =>
-        prev.map((upload) => ({
-          ...upload,
-          status: "error" as const,
-          message: error instanceof Error ? error.message : "Upload failed",
-        }))
+        prev.map((upload) => 
+          upload.status === "uploading"
+            ? {
+                ...upload,
+                status: "error" as const,
+                message: error instanceof Error ? error.message : "Upload failed",
+              }
+            : upload
+        )
       );
 
       toast({
@@ -125,6 +145,44 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
         variant: "destructive",
       });
     }
+  };
+
+  // Toggle selection for a specific file
+  const toggleFileSelection = (fileIndex: number) => {
+    setUploadFiles(prev => 
+      prev.map((file, index) => 
+        index === fileIndex && file.status === "pending"
+          ? { ...file, selected: !file.selected }
+          : file
+      )
+    );
+  };
+
+  // Select/deselect all pending files
+  const toggleSelectAll = () => {
+    const pendingFiles = uploadFiles.filter(f => f.status === "pending");
+    const allPendingSelected = pendingFiles.length > 0 && pendingFiles.every(f => f.selected);
+    
+    setUploadFiles(prev => 
+      prev.map(file => 
+        file.status === "pending"
+          ? { ...file, selected: !allPendingSelected }
+          : file
+      )
+    );
+  };
+
+  // Remove selected files
+  const removeSelectedFiles = () => {
+    const filesToRemove = uploadFiles.filter(f => f.selected && f.status === "pending");
+    if (filesToRemove.length === 0) return;
+
+    setUploadFiles(prev => prev.filter(f => !(f.selected && f.status === "pending")));
+    
+    toast({
+      title: "Files removed",
+      description: `${filesToRemove.length} file(s) removed from upload list.`,
+    });
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -150,5 +208,9 @@ export function useFileUpload(storeId: string | undefined, refetchDocuments: () 
     getRootProps,
     getInputProps,
     isDragActive,
+    uploadPendingFiles,
+    toggleFileSelection,
+    toggleSelectAll,
+    removeSelectedFiles,
   };
 }
