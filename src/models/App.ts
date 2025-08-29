@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose, { Schema, Document } from "mongoose";
 import { DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 

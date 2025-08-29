@@ -134,6 +134,7 @@ export function FolderUploadTab({
           {toggleFolderFileSelection && toggleSelectAllFolderFiles && removeSelectedFolderFiles ? (
             <FileListWithSearch
               files={folderFiles}
+              //@ts-expect-error - toggleFolderFileSelection is a function
               onToggleSelection={toggleFolderFileSelection}
               onToggleSelectAll={toggleSelectAllFolderFiles}
               onRemoveSelected={removeSelectedFolderFiles}

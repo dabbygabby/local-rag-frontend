@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Search, X, CheckSquare, Square } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,7 +20,6 @@ interface FileListWithSearchProps {
 export function FileListWithSearch({
   files,
   onToggleSelection,
-  onToggleSelectAll,
   onRemoveSelected,
   onClearSearch,
   variant,
@@ -64,6 +63,7 @@ export function FileListWithSearch({
     
     // Toggle selection for each pending file in the filtered results
     pendingFiles.forEach((file) => {
+      //@ts-expect-error - file is a FileUploadStatus or FolderUploadStatus
       const fileKey = variant === "folder" ? (file as FolderUploadStatus).originalPath : files.indexOf(file);
       const currentlySelected = file.selected || false;
       

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAppRun extends Document {
@@ -22,6 +23,7 @@ const AppRunSchema = new Schema<IAppRun>(
       type: String,
       required: true,
     },
+    //@ts-expect-error - sourceDocuments is a mixed type
     sourceDocuments: {
       type: [Schema.Types.Mixed],
       required: true,

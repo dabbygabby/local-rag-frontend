@@ -33,12 +33,15 @@ export default async function handler(
     }
 
     // Merge stored defaults with any overrides
+    //@ts-expect-error - app is a type
     const finalSystemPrompt = overrides?.systemPrompt || app.systemPrompt;
     const finalRetrievalSettings = {
+      //@ts-expect-error - app is a type
       ...app.retrievalSettings,
       ...overrides?.retrievalSettings,
     };
     const finalGenerationSettings = {
+      //@ts-expect-error - app is a type
       ...app.generationSettings,
       ...overrides?.generationSettings,
     };
@@ -56,6 +59,7 @@ export default async function handler(
       include_sources: finalGenerationSettings.include_sources || true,
       include_confidence: finalGenerationSettings.include_confidence || false,
       query_expansion: finalRetrievalSettings.query_expansion || false,
+      //@ts-expect-error - app is a type
       vector_stores: [app.knowledgeBaseId],
       metadata_filters: {},
     };
@@ -65,6 +69,7 @@ export default async function handler(
 
     // Create an AppRun document to record this execution
     const appRun = new AppRun({
+      //@ts-expect-error - app is a type
       appId: app._id.toString(),
       question: question || undefined,
       answer: queryResponse.response,

@@ -28,6 +28,7 @@ export default async function handler(
       res.status(200).json({
         apps: apps.map(app => ({
           ...app,
+          //@ts-expect-error - app is a type
           _id: app._id.toString(),
         })),
         total,

@@ -164,7 +164,7 @@ export default function StoreDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Header */}
       <StoreHeader
         storeName={store.name}

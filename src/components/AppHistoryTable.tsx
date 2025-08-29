@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AppRun } from "@/types/app";
-import { SourceDocument } from "@/types/api";
 import { SourceDocumentCard } from "@/components/SourceDocumentCard";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

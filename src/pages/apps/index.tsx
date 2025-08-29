@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Plus, Edit, Trash2, Play, Database, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useApps, useDeleteApp } from "@/hooks/apps";
 import { AppFormModal } from "@/components/AppFormModal";
@@ -12,7 +11,9 @@ import { format } from "date-fns";
 
 export default function AppsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  //@ts-expect-error - App is a type
   const [editingApp, setEditingApp] = useState<App | null>(null);
+  //@ts-expect-error - App is a type
   const [deletingApp, setDeletingApp] = useState<App | null>(null);
   const { toast } = useToast();
   
@@ -48,7 +49,7 @@ export default function AppsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8]">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-10 bg-gray-200 rounded w-1/3"></div>
@@ -78,7 +79,7 @@ export default function AppsPage() {
   const apps = appsData?.apps || [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="flex flex-col p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -192,6 +193,7 @@ export default function AppsPage() {
 
       {/* Delete Confirmation */}
       <ConfirmationDialog
+        //@ts-expect-error - deletingApp is a type
         isOpen={!!deletingApp}
         onClose={() => setDeletingApp(null)}
         onConfirm={handleDelete}

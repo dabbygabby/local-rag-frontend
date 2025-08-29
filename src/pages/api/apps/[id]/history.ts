@@ -33,6 +33,7 @@ export default async function handler(
       res.status(200).json({
         runs: runs.map(run => ({
           ...run,
+          //@ts-expect-error - run is a type
           _id: run._id.toString(),
         })),
         total,

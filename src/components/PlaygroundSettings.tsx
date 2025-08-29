@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { vectorStoreApi } from "@/lib/api";
 import { ChatSettings } from "@/types/chat";
-import { MAX_COMPLETION_TOKENS, MIN_COMPLETION_TOKENS, TOKEN_STEP_SIZE, DEFAULT_MAX_TOKENS } from "@/constants/tokens";
+import { MAX_COMPLETION_TOKENS, MIN_COMPLETION_TOKENS, TOKEN_STEP_SIZE } from "@/constants/tokens";
 
 interface PlaygroundSettingsProps {
   open?: boolean;

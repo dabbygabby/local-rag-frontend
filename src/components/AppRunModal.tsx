@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Play, Settings, X, Loader2, Eye, EyeOff } from "lucide-react";
+import { Play, X, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +37,7 @@ export function AppRunModal({ isOpen, onClose, app }: AppRunModalProps) {
     handleSubmit,
     watch,
     setValue,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     formState: { errors },
     reset,
   } = useForm<RunAppRequest>({

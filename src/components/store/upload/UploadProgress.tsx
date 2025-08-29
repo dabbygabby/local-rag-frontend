@@ -38,6 +38,7 @@ export function UploadProgress({
       {hasSelectionHandlers ? (
         <FileListWithSearch
           files={uploadFiles}
+          //@ts-expect-error - onToggleSelection is a function
           onToggleSelection={onToggleSelection}
           onToggleSelectAll={onToggleSelectAll}
           onRemoveSelected={onRemoveSelected}

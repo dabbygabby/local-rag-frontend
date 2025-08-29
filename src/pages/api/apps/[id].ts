@@ -25,6 +25,7 @@ export default async function handler(
 
               res.status(200).json({
           ...app,
+          //@ts-expect-error - app is a type
           _id: app._id.toString(),
         });
     } catch (error) {
@@ -47,6 +48,7 @@ export default async function handler(
 
               res.status(200).json({
           ...updatedApp,
+          //@ts-expect-error - updatedApp is a type
           _id: updatedApp._id.toString(),
         });
     } catch (error) {

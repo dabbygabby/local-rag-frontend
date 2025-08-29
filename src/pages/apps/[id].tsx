@@ -85,7 +85,7 @@ export default function AppDetailPage() {
   const runs = runsData?.runs || [];
 
   return (
-    <div className="container mx-auto">
+    <div className="flex flex-col p-4">
       {/* Header */}
       <div className="mb-8">
         <Button variant="ghost" asChild className="mb-4">

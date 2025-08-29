@@ -215,7 +215,7 @@ export default function QueryPlayground() {
   const isSubmitDisabled = !formState.question.trim() || isQuerying;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Query Playground</h1>
