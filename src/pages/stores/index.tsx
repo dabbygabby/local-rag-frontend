@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { Plus, Database, MoreHorizontal, ExternalLink, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Database,
+  MoreHorizontal,
+  ExternalLink,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -60,7 +65,8 @@ export default function KnowledgeBasesPage() {
     } catch (error) {
       toast({
         title: "❌ Failed to delete knowledge base",
-        description: error instanceof Error ? error.message : "Please try again later.",
+        description:
+          error instanceof Error ? error.message : "Please try again later.",
         variant: "destructive",
       });
     }
@@ -103,9 +109,12 @@ export default function KnowledgeBasesPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Knowledge Bases</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Manage Knowledge Bases
+          </h1>
           <p className="text-muted-foreground">
-            Create, configure, and manage your vector stores for document search.
+            Create, configure, and manage your vector stores for document
+            search.
           </p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
@@ -115,124 +124,117 @@ export default function KnowledgeBasesPage() {
       </div>
 
       {/* Main Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Knowledge Bases
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            // Loading skeleton
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            // Error state
-            <Alert variant="destructive">
-              <AlertDescription>
-                Failed to load knowledge bases. Please try again later.
-              </AlertDescription>
-            </Alert>
-          ) : !stores || stores.length === 0 ? (
-            // Empty state
-            <div className="text-center py-12">
-              <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Knowledge Bases</h3>
-              <p className="text-muted-foreground mb-4">
-                Get started by creating your first knowledge base to organize and search your documents.
-              </p>
-              <Button onClick={() => setShowCreateModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Knowledge Base
-              </Button>
-            </div>
-          ) : (
-            // Data table
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Documents</TableHead>
-                    <TableHead className="text-right">Chunks</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+      <div>
+        {isLoading ? (
+          // Loading skeleton
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          // Error state
+          <Alert variant="destructive">
+            <AlertDescription>
+              Failed to load knowledge bases. Please try again later.
+            </AlertDescription>
+          </Alert>
+        ) : !stores || stores.length === 0 ? (
+          // Empty state
+          <div className="text-center py-12">
+            <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Knowledge Bases</h3>
+            <p className="text-muted-foreground mb-4">
+              Get started by creating your first knowledge base to organize and
+              search your documents.
+            </p>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Knowledge Base
+            </Button>
+          </div>
+        ) : (
+          // Data table
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Documents</TableHead>
+                  <TableHead className="text-right">Chunks</TableHead>
+                  <TableHead>Last Updated</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stores.map((store) => (
+                  <TableRow key={store.store_id}>
+                    <TableCell className="font-medium">
+                      <div>
+                        <div className="font-medium">{store.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          ID: {store.store_id}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[200px] truncate">
+                        {store.description || "No description"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(store.status)}>
+                        {store.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {store.stats.total_documents.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {store.stats.total_chunks.toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {formatDate(store.stats.last_updated)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleManageStore(store.store_id)}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Manage
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeleteStore(store)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stores.map((store) => (
-                    <TableRow key={store.store_id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div className="font-medium">{store.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            ID: {store.store_id}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[200px] truncate">
-                          {store.description || "No description"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(store.status)}>
-                          {store.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {store.stats.total_documents.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {store.stats.total_chunks.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {formatDate(store.stats.last_updated)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleManageStore(store.store_id)}
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Manage
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setDeleteStore(store)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
 
       {/* Create Store Modal */}
       <CreateStoreModal
