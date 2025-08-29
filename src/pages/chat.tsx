@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { MessageCircle, Settings, RotateCcw, Send, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2 } from "lucide-react";
 import { ChatMessage, ChatRequest, ChatSettings } from "@/types/chat";
 import { streamChat } from "@/lib/chatApi";
 import { MessageBubble } from "@/components/MessageBubble";
 import { PlaygroundSettings } from "@/components/PlaygroundSettings";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FloatingChatInput } from "@/components/FloatingChatInput";
 import { useToast } from "@/hooks/use-toast";
+import { useKnowledgeBaseStore } from "@/stores/knowledge-base-store";
 import { DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 
 // Session handling hook
@@ -35,6 +34,7 @@ function useChatSession() {
 export default function ChatPage() {
   const { sessionId, clearSession } = useChatSession();
   const { toast } = useToast();
+  const { selectedStoreIds } = useKnowledgeBaseStore();
   
   // Initialize messages from localStorage
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -62,12 +62,11 @@ export default function ChatPage() {
     max_tokens: DEFAULT_MAX_TOKENS,
     system_prompt: "",
     condense_context: true,
-    vector_stores: [],
+    vector_stores: selectedStoreIds,
     metadata_filters: {},
   });
 
   const endRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Keep localStorage in sync with messages
   useEffect(() => {
@@ -81,12 +80,10 @@ export default function ChatPage() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStreaming]);
 
-  // Focus textarea after sending a message
+  // Update settings when selected stores change
   useEffect(() => {
-    if (!isStreaming && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, [isStreaming]);
+    setSettings(prev => ({ ...prev, vector_stores: selectedStoreIds }));
+  }, [selectedStoreIds]);
 
   const handleNewSession = () => {
     clearSession();
@@ -161,55 +158,25 @@ export default function ChatPage() {
     );
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
 
-  const isSubmitDisabled = !input.trim() || isStreaming;
 
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-background px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <MessageCircle className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-xl font-semibold">Knowledge Base Chat</h1>
-              <p className="text-sm text-muted-foreground">
-                Interactive conversation with your documents
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNewSession}
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              New Session
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSettings(true)}
-              className="flex items-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Button>
+        <div className="flex items-center gap-3">
+          <MessageCircle className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-xl font-semibold">Knowledge Base Chat</h1>
+            <p className="text-sm text-muted-foreground">
+              Interactive conversation with your documents
+            </p>
           </div>
         </div>
       </div>
 
       {/* Messages container */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-64">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center p-8">
             <div className="space-y-4 max-w-md">
@@ -221,7 +188,7 @@ export default function ChatPage() {
                 </p>
               </div>
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>💡 <strong>Tip:</strong> Configure your settings for better results</p>
+                <p>💡 <strong>Tip:</strong> Select knowledge bases below to get started</p>
                 <p>🔄 <strong>Context:</strong> Previous messages inform new responses</p>
                 <p>📚 <strong>Sources:</strong> View document sources for each answer</p>
               </div>
@@ -248,52 +215,16 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* Input area */}
-      <div className="flex-shrink-0 border-t bg-background p-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Warning for no knowledge bases */}
-          {settings.vector_stores.length === 0 && (
-            <Alert className="mb-4">
-              <AlertDescription>
-                No knowledge bases selected. Please configure your settings to select at least one knowledge base.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Textarea
-                ref={textareaRef}
-                placeholder="Ask a question about your documents..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isStreaming}
-                className="resize-none min-h-[60px] max-h-[120px]"
-                aria-label="Chat input"
-              />
-            </div>
-            <Button
-              onClick={sendMessage}
-              disabled={isSubmitDisabled}
-              size="lg"
-              className="flex items-center gap-2 px-6"
-            >
-              {isStreaming ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              Send
-            </Button>
-          </div>
-          
-          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>Press Enter to send, Shift+Enter for new line</span>
-            <span>{settings.vector_stores.length} knowledge base(s) selected</span>
-          </div>
-        </div>
-      </div>
+      {/* Floating Chat Input */}
+      <FloatingChatInput
+        input={input}
+        setInput={setInput}
+        onSendMessage={sendMessage}
+        onNewSession={handleNewSession}
+        onOpenSettings={() => setShowSettings(true)}
+        isStreaming={isStreaming}
+        disabled={selectedStoreIds.length === 0}
+      />
 
       {/* Settings */}
       <PlaygroundSettings
