@@ -1,14 +1,25 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { MessageCircle, Search, Database, AppWindow, Settings } from "lucide-react";
+import {
+  MessageCircle,
+  Search,
+  Database,
+  AppWindow,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the nav items outside the component so they can be reused
 const navItems = [
   {
     href: "/",
-    label: "Chat",
+    label: "Home",
     icon: MessageCircle,
+  },
+  {
+    href: "/apps",
+    label: "Apps",
+    icon: AppWindow,
   },
   {
     href: "/query",
@@ -21,11 +32,6 @@ const navItems = [
     icon: Database,
   },
   {
-    href: "/apps",
-    label: "Apps",
-    icon: AppWindow,
-  },
-  {
     href: "/settings",
     label: "Settings",
     icon: Settings,
@@ -35,7 +41,7 @@ const navItems = [
 // Create a NavItems component to avoid duplication
 function NavItems() {
   const router = useRouter();
-  
+
   return (
     <div className="space-y-1">
       {navItems.map((item) => {
@@ -60,16 +66,11 @@ function NavItems() {
   );
 }
 
-// The original SideNav for desktop view
+// SideNav component is no longer needed as we're using floating sidebar
+// Keeping this export for backward compatibility, but it won't render anything
 export function SideNav() {
-  return (
-    <aside className="hidden md:block w-64 shrink-0 border-r bg-white dark:bg-neutral-950">
-      <nav className="flex h-full flex-col p-4">
-        <NavItems />
-      </nav>
-    </aside>
-  );
+  return null;
 }
 
 // Export the NavItems for use in the mobile sheet
-export { NavItems }; 
+export { NavItems };
