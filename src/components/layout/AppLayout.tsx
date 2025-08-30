@@ -115,7 +115,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       )}
 
       {/* Main content - full width */}
-      <main className="flex-1 overflow-y-auto w-full px-24 pt-2 bg-gray-50">
+      <main className="flex-1 overflow-y-auto w-full px-20 bg-gray-50">
         {children}
       </main>
     </div>
