@@ -1,10 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Settings, RotateCcw, Check, ChevronsUpDown } from "lucide-react";
+import {
+  Loader2,
+  Settings,
+  RotateCcw,
+  Check,
+  ChevronsUpDown,
+  ArrowUp,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -70,46 +76,50 @@ export function FloatingChatInput({
 
   const isSubmitDisabled = !input.trim() || isStreaming || disabled;
 
-  const selectedStores = vectorStores?.filter(store => 
-    selectedStoreIds.includes(store.store_id)
-  ) || [];
+  const selectedStores =
+    vectorStores?.filter((store) =>
+      selectedStoreIds.includes(store.store_id)
+    ) || [];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
       <div className="mx-auto max-w-[50%] min-w-[400px]">
         <Card className="shadow-lg border-2">
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-2 space-y-3">
             {/* Input Area */}
-            <div className="flex items-end gap-3">
+            <div className="flex items-top gap-3 bg-gray-100 p-2 rounded-md">
               <div className="flex-1">
                 <Textarea
                   ref={textareaRef}
-                  placeholder={selectedStoreIds.length > 0 ? "Ask a question about your documents..." : "Ask me anything..."}
+                  placeholder={
+                    selectedStoreIds.length > 0
+                      ? "Ask a question about your documents..."
+                      : "Ask me anything..."
+                  }
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isStreaming || disabled}
-                  className="resize-none min-h-[60px] max-h-[120px] border-0 focus-visible:ring-1"
+                  className="resize-none min-h-[60px] max-h-[320px] border-none bg-transparent focus-visible:ring-0 focus-visible:outline-none focus-visible:border-none shadow-none"
                   aria-label="Chat input"
                 />
               </div>
               <Button
                 onClick={onSendMessage}
                 disabled={isSubmitDisabled}
-                size="lg"
-                className="flex items-center gap-2 px-6"
+                //make it square
+                className="h-10 w-10"
               >
                 {isStreaming ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <ArrowUp className="h-4 w-4" />
                 )}
-                Send
               </Button>
             </div>
 
             {/* Control Buttons with Knowledge Base Selection */}
-            <div className="flex items-center justify-between pt-2 border-t">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -118,18 +128,8 @@ export function FloatingChatInput({
                   className="flex items-center gap-2"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  New Session
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onOpenSettings}
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </Button>
-                
+
                 {/* Knowledge Base Multiselect Dropdown */}
                 <Popover open={open} onOpenChange={setOpen}>
                   <PopoverTrigger asChild>
@@ -152,7 +152,10 @@ export function FloatingChatInput({
                   </PopoverTrigger>
                   <PopoverContent className="w-[300px] p-0">
                     <Command>
-                      <CommandInput placeholder="Search knowledge bases..." className="h-9" />
+                      <CommandInput
+                        placeholder="Search knowledge bases..."
+                        className="h-9"
+                      />
                       <CommandList>
                         <CommandEmpty>No knowledge bases found.</CommandEmpty>
                         <CommandGroup>
@@ -195,27 +198,14 @@ export function FloatingChatInput({
                   </PopoverContent>
                 </Popover>
               </div>
-              
-              {/* Selected Knowledge Bases Pills */}
-              {selectedStores.length > 0 && (
-                <div className="flex flex-wrap gap-1 max-w-[200px]">
-                  {selectedStores.map((store) => (
-                    <Badge
-                      key={store.store_id}
-                      variant="secondary"
-                      className="text-xs cursor-pointer hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900 dark:hover:text-red-200"
-                      onClick={() => toggleStoreSelection(store.store_id)}
-                    >
-                      {store.name} ×
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Keyboard Shortcut Hint */}
-            <div className="text-xs text-muted-foreground text-center">
-              Press Enter to send, Shift+Enter for new line
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onOpenSettings}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
             </div>
           </CardContent>
         </Card>
