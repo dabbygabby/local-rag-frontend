@@ -76,8 +76,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div
         ref={sidebarRef}
         className={cn(
-          "fixed top-4 right-4 bottom-4 w-80 bg-white dark:bg-neutral-950 border shadow-2xl rounded-2xl z-40 transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-x-0" : "translate-x-full"
+          "fixed top-4 left-4 bottom-4 w-80 bg-white dark:bg-neutral-950 border shadow-2xl rounded-2xl z-40 transition-transform duration-300 ease-in-out",
+          isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full p-6">
