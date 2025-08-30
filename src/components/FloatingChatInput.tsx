@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/command";
 import { vectorStoreApi } from "@/lib/api";
 import { useKnowledgeBaseStore } from "@/stores/knowledge-base-store";
+import { ImageUploader } from "@/components/ImageUploader";
 
 interface FloatingChatInputProps {
   input: string;
@@ -35,6 +36,8 @@ interface FloatingChatInputProps {
   onOpenSettings: () => void;
   isStreaming: boolean;
   disabled?: boolean;
+  images: string[];
+  setImages: (images: string[]) => void;
 }
 
 export function FloatingChatInput({
@@ -45,6 +48,8 @@ export function FloatingChatInput({
   onOpenSettings,
   isStreaming,
   disabled = false,
+  images,
+  setImages,
 }: FloatingChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [open, setOpen] = useState(false);
@@ -74,7 +79,7 @@ export function FloatingChatInput({
     }
   };
 
-  const isSubmitDisabled = !input.trim() || isStreaming || disabled;
+  const isSubmitDisabled = (!input.trim() && images.length === 0) || isStreaming || disabled;
 
   const selectedStores =
     vectorStores?.filter((store) =>
@@ -86,6 +91,14 @@ export function FloatingChatInput({
       <div className="mx-auto max-w-[50%] min-w-[400px]">
         <Card className="shadow-lg border-2">
           <CardContent className="p-2 space-y-3">
+            {/* Image Upload Area */}
+            <ImageUploader
+              onChange={setImages}
+              initialImages={images}
+              disabled={isStreaming || disabled}
+              className="px-2"
+            />
+            
             {/* Input Area */}
             <div className="flex items-top gap-3 bg-gray-100 p-2 rounded-md">
               <div className="flex-1">

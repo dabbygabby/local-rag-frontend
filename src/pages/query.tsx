@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SourceDocumentCard } from "@/components/SourceDocumentCard";
 import { AddToSourcesModal } from "@/components/AddToSourcesModal";
+import { ImageUploader } from "@/components/ImageUploader";
 import { vectorStoreApi, queryApi } from "@/lib/api";
 import { QueryRequest, QueryResponse } from "@/types/api";
 import { MAX_COMPLETION_TOKENS, MIN_COMPLETION_TOKENS, TOKEN_STEP_SIZE, DEFAULT_MAX_TOKENS } from "@/constants/tokens";
@@ -40,6 +41,7 @@ export default function QueryPlayground() {
     metadata_filters: {},
     deep_reasoning: false,          // <-- NEW state property
     multi_source_fetch: true,       // <-- NEW state property (default = true)
+    images: [],                     // <-- NEW state property for images
   });
 
   // Query execution state
@@ -231,7 +233,7 @@ export default function QueryPlayground() {
     }
   };
 
-  const isSubmitDisabled = !formState.question.trim() || isQuerying;
+  const isSubmitDisabled = (!formState.question.trim() && (!formState.images || formState.images.length === 0)) || isQuerying;
 
   return (
     <div className="space-y-6 p-4">
@@ -257,13 +259,23 @@ export default function QueryPlayground() {
             <CardContent className="space-y-6">
               {/* Main Question Input */}
               <div className="space-y-2">
-                <Label htmlFor="question">Question *</Label>
+                <Label htmlFor="question">Question</Label>
                 <Textarea
                   id="question"
                   placeholder="Enter your question here..."
                   value={formState.question}
                   onChange={(e) => updateFormField("question", e.target.value)}
                   className="min-h-[100px]"
+                />
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label>Images (Optional)</Label>
+                <ImageUploader
+                  onChange={(images) => updateFormField("images", images)}
+                  initialImages={formState.images || []}
+                  disabled={isQuerying}
                 />
               </div>
 

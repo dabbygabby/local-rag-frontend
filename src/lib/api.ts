@@ -236,11 +236,36 @@ export const documentApi = {
 
 // Query API
 export const queryApi = {
-  query: (data: QueryRequest): Promise<QueryResponse> =>
-    apiCall("/query", {
+  query: (data: QueryRequest): Promise<QueryResponse> => {
+    // If images are present, use multipart/form-data; otherwise JSON
+    if (data.images && data.images.length > 0) {
+      const form = new FormData();
+      
+      // Add all non-image fields as JSON
+      const { images, ...restData } = data;
+      Object.entries(restData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          form.append(key, typeof value === 'string' ? value : JSON.stringify(value));
+        }
+      });
+      
+      // Add images with data URI prefix for backend to recognize mime type
+      images.forEach((base64, index) => {
+        form.append(`image_${index}`, `data:image/jpeg;base64,${base64}`);
+      });
+      
+      return apiCall("/query", {
+        method: "POST",
+        body: form,
+      });
+    }
+    
+    // Fallback - original JSON endpoint
+    return apiCall("/query", {
       method: "POST",
       body: JSON.stringify(data),
-    }),
+    });
+  },
 };
 
 // Utility functions

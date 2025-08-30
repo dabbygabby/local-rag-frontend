@@ -102,6 +102,8 @@ export interface QueryRequest {
   deep_reasoning?: boolean;   // <-- NEW FIELD (default = false on server)
   /** When true enables multi‑stage retrieval for related chunks. */
   multi_source_fetch?: boolean; // <-- NEW FIELD (default = true)
+  /** Array of base64 encoded images (without data URI prefix) */
+  images?: string[];
 }
 
 export interface SourceDocument {

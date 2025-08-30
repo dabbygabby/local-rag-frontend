@@ -8,14 +8,44 @@ export async function streamChat(
   onError: (err: Error) => void
 ) {
   try {
-    const resp = await fetch(`${API_BASE_URL}/api/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-      },
-      body: JSON.stringify(request),
-    });
+    let requestOptions: RequestInit;
+    
+    // If images are present, use multipart/form-data; otherwise JSON
+    if (request.images && request.images.length > 0) {
+      const form = new FormData();
+      
+      // Add all non-image fields as JSON
+      const { images, ...restRequest } = request;
+      Object.entries(restRequest).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          form.append(key, typeof value === 'string' ? value : JSON.stringify(value));
+        }
+      });
+      
+      // Add images with data URI prefix for backend to recognize mime type
+      images.forEach((base64, index) => {
+        form.append(`image_${index}`, `data:image/jpeg;base64,${base64}`);
+      });
+      
+      requestOptions = {
+        method: "POST",
+        headers: {
+          Accept: "text/event-stream",
+        },
+        body: form,
+      };
+    } else {
+      requestOptions = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
+        body: JSON.stringify(request),
+      };
+    }
+    
+    const resp = await fetch(`${API_BASE_URL}/api/chat`, requestOptions);
 
     if (!resp.ok) {
       const txt = await resp.text();

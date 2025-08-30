@@ -55,6 +55,7 @@ export default function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   const [input, setInput] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
@@ -110,6 +111,7 @@ export default function HomePage() {
     clearSession();
     setMessages([]);
     setInput("");
+    setImages([]);
     toast({
       title: "New session started",
       description: "Previous conversation history has been cleared.",
@@ -117,7 +119,7 @@ export default function HomePage() {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || isStreaming || !isHydrated) return;
+    if ((!input.trim() && images.length === 0) || isStreaming || !isHydrated) return;
 
     const userMsg: ChatMessage = {
       role: "user",
@@ -127,6 +129,7 @@ export default function HomePage() {
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setImages([]);
     setIsStreaming(true);
 
     // Create placeholder assistant message
@@ -153,6 +156,8 @@ export default function HomePage() {
       vector_stores: noKb ? [] : settings.vector_stores,
       // Use the no‑KB system prompt when appropriate
       system_prompt: noKb ? DEFAULT_SYSTEM_PROMPT_NO_KB : settings.system_prompt,
+      // Include images if any are selected
+      images: images.length > 0 ? images : undefined,
     };
 
     await streamChat(
@@ -262,6 +267,8 @@ export default function HomePage() {
         onOpenSettings={() => setShowSettings(true)}
         isStreaming={isStreaming}
         disabled={false}
+        images={images}
+        setImages={setImages}
       />
 
       {/* Settings */}
