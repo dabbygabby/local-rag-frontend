@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, User } from "lucide-react";
 import { ChatMessage } from "@/types/chat";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,8 +28,15 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <div className="flex w-[50%] flex-col gap-2">
         {/* Message content */}
         {isUser ? (
-          // Human message - no background/card
-          <div className="prose prose-sm max-w-none text-left">
+          // Human message - no background/card with user avatar
+          <div className="flex items-start gap-3">
+            {/* User avatar */}
+            <div className="flex-shrink-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+                <User className="h-4 w-4 text-primary-foreground" />
+              </div>
+            </div>
+            <div className="prose prose-sm max-w-none text-left flex-1">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -99,6 +106,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             >
               {message.content}
             </ReactMarkdown>
+            </div>
           </div>
         ) : (
           // Bot message - white background with card
