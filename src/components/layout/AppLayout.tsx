@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
 import { NavItems } from "./SideNav";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -57,17 +56,13 @@ export function AppLayout({ children }: AppLayoutProps) {
           onClick={() => setIsOpen(!isOpen)}
           className="rounded-full shadow-lg bg-white dark:bg-neutral-950 border-2"
         >
-          {isOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Image
-              src="/logo-icon.png"
-              alt="Menu"
-              width={20}
-              height={20}
-              className="object-contain"
-            />
-          )}
+          <Image
+            src="/logo-icon.png"
+            alt="Menu"
+            width={20}
+            height={20}
+            className="object-contain"
+          />
           <span className="sr-only">Toggle menu</span>
         </Button>
       </div>
@@ -82,7 +77,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       >
         <div className="flex flex-col h-full p-6">
           {/* Logo in sidebar */}
-          <Link href="/" className="flex justify-center items-center mb-8 pt-12">
+          <Link href="/" className="flex justify-start items-center mb-4">
             <Image
               src="/logo.png"
               alt="Logo"
