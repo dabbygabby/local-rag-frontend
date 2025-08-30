@@ -21,11 +21,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   return (
     <div
-      className="flex w-full justify-center px-4 py-6"
+      className="flex w-full justify-center py-6"
       {...(message.role === "assistant" && { "aria-live": "polite" as const })}
     >
       {/* Message content - centered with fixed 50% width */}
-      <div className="flex w-[50%] flex-col gap-2">
+      <div className="flex w-[55%] flex-col gap-2">
         {/* Message content */}
         {isUser ? (
           // Human message - no background/card with user avatar

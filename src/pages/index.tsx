@@ -20,14 +20,21 @@ If you don't know something, say so. Keep responses concise and friendly.`;
 
 // Session handling hook
 function useChatSession() {
-  const [sessionId, setSessionId] = useState<string>(() => {
-    if (typeof window === "undefined") return uuidv4();
+  const [sessionId, setSessionId] = useState<string>("");
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    // Initialize session ID on client side only
     const stored = localStorage.getItem("chatSessionId");
-    if (stored) return stored;
-    const id = uuidv4();
-    localStorage.setItem("chatSessionId", id);
-    return id;
-  });
+    if (stored) {
+      setSessionId(stored);
+    } else {
+      const id = uuidv4();
+      setSessionId(id);
+      localStorage.setItem("chatSessionId", id);
+    }
+    setIsHydrated(true);
+  }, []);
 
   const clearSession = () => {
     const id = uuidv4();
@@ -36,20 +43,16 @@ function useChatSession() {
     localStorage.removeItem(`chatHistory:${sessionId}`);
   };
 
-  return { sessionId, clearSession };
+  return { sessionId, clearSession, isHydrated };
 }
 
 export default function HomePage() {
-  const { sessionId, clearSession } = useChatSession();
+  const { sessionId, clearSession, isHydrated } = useChatSession();
   const { toast } = useToast();
   const { selectedStoreIds } = useKnowledgeBaseStore();
   
-  // Initialize messages from localStorage
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (typeof window === "undefined") return [];
-    const saved = localStorage.getItem(`chatHistory:${sessionId}`);
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Initialize messages - start empty and load from localStorage after hydration
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -76,12 +79,22 @@ export default function HomePage() {
 
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Load messages from localStorage after hydration
+  useEffect(() => {
+    if (isHydrated && sessionId) {
+      const saved = localStorage.getItem(`chatHistory:${sessionId}`);
+      if (saved) {
+        setMessages(JSON.parse(saved));
+      }
+    }
+  }, [isHydrated, sessionId]);
+
   // Keep localStorage in sync with messages
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (isHydrated && sessionId) {
       localStorage.setItem(`chatHistory:${sessionId}`, JSON.stringify(messages));
     }
-  }, [messages, sessionId]);
+  }, [messages, sessionId, isHydrated]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -104,7 +117,7 @@ export default function HomePage() {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || isStreaming) return;
+    if (!input.trim() || isStreaming || !isHydrated) return;
 
     const userMsg: ChatMessage = {
       role: "user",
@@ -179,6 +192,25 @@ export default function HomePage() {
 
 
 
+  // Show loading state until hydrated
+  if (!isHydrated) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50">
+        <div className="flex-1 overflow-y-auto pb-64">
+          <div className="flex items-center justify-center h-full text-center p-8">
+            <div className="space-y-4 max-w-md">
+              <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">Loading...</h2>
+                <p className="text-muted-foreground">Initializing chat session...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Messages container */}
@@ -208,8 +240,8 @@ export default function HomePage() {
             
             {/* Streaming indicator */}
             {isStreaming && (
-              <div className="flex justify-start px-4 py-2">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <div className="flex justify-center items-center px-4 py-2 w-full">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm w-1/2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Thinking...</span>
                 </div>
