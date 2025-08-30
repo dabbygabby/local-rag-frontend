@@ -442,7 +442,7 @@ export function PlaygroundSettings({
   // Default: sheet variant
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-[30vw] overflow-y-auto flex flex-col">
+      <SheetContent side="right" className="!w-[30vw] !max-w-none overflow-y-auto flex flex-col">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
