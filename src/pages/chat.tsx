@@ -10,6 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useKnowledgeBaseStore } from "@/stores/knowledge-base-store";
 import { DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 
+// ------------------------------------------------------------
+//  Default system prompt used when the user has not picked a KB
+// ------------------------------------------------------------
+export const DEFAULT_SYSTEM_PROMPT_NO_KB = `You are a helpful AI assistant.
+Engage in a natural, open‑ended conversation. Answer questions directly
+using your own knowledge; do not try to look up external documents.
+If you don't know something, say so. Keep responses concise and friendly.`;
+
 // Session handling hook
 function useChatSession() {
   const [sessionId, setSessionId] = useState<string>(() => {
@@ -116,11 +124,22 @@ export default function ChatPage() {
     };
     setMessages((prev) => [...prev, assistantMsg]);
 
-    // Prepare chat request
+    // --------------------------------------------------------------
+    // 1️⃣  Detect "no knowledge‑base selected"
+    // --------------------------------------------------------------
+    const noKb = !settings.vector_stores || settings.vector_stores.length === 0;
+
+    // --------------------------------------------------------------
+    // 2️⃣  Prepare chat request with appropriate system prompt
+    // --------------------------------------------------------------
     const request: ChatRequest = {
       session_id: sessionId,
       messages: [...messages, userMsg],
       ...settings,
+      // Send an empty array when no KB – the backend treats this as "no KB"
+      vector_stores: noKb ? [] : settings.vector_stores,
+      // Use the no‑KB system prompt when appropriate
+      system_prompt: noKb ? DEFAULT_SYSTEM_PROMPT_NO_KB : settings.system_prompt,
     };
 
     await streamChat(
@@ -162,19 +181,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b bg-background px-6 py-4">
-        <div className="flex items-center gap-3">
-          <MessageCircle className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold">Knowledge Base Chat</h1>
-            <p className="text-sm text-muted-foreground">
-              Interactive conversation with your documents
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto pb-64">
         {messages.length === 0 ? (
@@ -184,13 +190,13 @@ export default function ChatPage() {
               <div className="space-y-2">
                 <h2 className="text-xl font-semibold">Start a conversation</h2>
                 <p className="text-muted-foreground">
-                  Ask questions about your knowledge base. The conversation context will be maintained throughout the session.
+                  Chat with the AI using its general knowledge, or select knowledge bases for document-specific answers. The conversation context will be maintained throughout the session.
                 </p>
               </div>
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>💡 <strong>Tip:</strong> Select knowledge bases below to get started</p>
+                <p>💡 <strong>Tip:</strong> Select knowledge bases for document-specific answers</p>
                 <p>🔄 <strong>Context:</strong> Previous messages inform new responses</p>
-                <p>📚 <strong>Sources:</strong> View document sources for each answer</p>
+                <p>📚 <strong>Sources:</strong> View document sources when using knowledge bases</p>
               </div>
             </div>
           </div>
@@ -223,7 +229,7 @@ export default function ChatPage() {
         onNewSession={handleNewSession}
         onOpenSettings={() => setShowSettings(true)}
         isStreaming={isStreaming}
-        disabled={selectedStoreIds.length === 0}
+        disabled={false}
       />
 
       {/* Settings */}

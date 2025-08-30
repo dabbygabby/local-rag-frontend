@@ -130,11 +130,11 @@ export function FloatingChatInput({
               )}
             </div>
 
-            {/* Warning for no knowledge bases */}
+            {/* Info for no knowledge bases */}
             {selectedStoreIds.length === 0 && (
               <Alert className="py-2">
                 <AlertDescription className="text-sm">
-                  Please select at least one knowledge base to start chatting.
+                  No knowledge bases selected. You can chat with the AI using its general knowledge, or select knowledge bases above for document-specific answers.
                 </AlertDescription>
               </Alert>
             )}
@@ -144,7 +144,7 @@ export function FloatingChatInput({
               <div className="flex-1">
                 <Textarea
                   ref={textareaRef}
-                  placeholder="Ask a question about your documents..."
+                  placeholder={selectedStoreIds.length > 0 ? "Ask a question about your documents..." : "Ask me anything..."}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
