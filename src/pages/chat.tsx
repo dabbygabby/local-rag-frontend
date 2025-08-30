@@ -180,7 +180,7 @@ export default function ChatPage() {
 
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto pb-64">
         {messages.length === 0 ? (

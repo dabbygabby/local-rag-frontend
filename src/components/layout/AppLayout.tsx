@@ -13,9 +13,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col">
       <TopNav />
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {/* Desktop sidebar */}
         <SideNav />
         
@@ -36,8 +36,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           </Sheet>
         </div>
         
-        {/* Main content */}
-        <main className="flex-1">{children}</main>
+        {/* Main content - now scrollable */}
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );
