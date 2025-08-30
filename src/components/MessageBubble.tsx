@@ -24,8 +24,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       className="flex w-full justify-center px-4 py-6"
       {...(message.role === "assistant" && { "aria-live": "polite" as const })}
     >
-      {/* Message content - centered */}
-      <div className="flex max-w-[80%] flex-col gap-2">
+      {/* Message content - centered with fixed 50% width */}
+      <div className="flex w-[50%] flex-col gap-2">
         {/* Message content */}
         {isUser ? (
           // Human message - no background/card
