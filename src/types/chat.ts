@@ -29,8 +29,11 @@ export interface ChatRequest {
   condense_context?: boolean;        // default true
   vector_stores?: string[];
   metadata_filters?: Record<string, unknown>;
-  /** Array of base64 encoded images (without data URI prefix) */
-  images?: string[];
+  /** Array of image objects with base64 data and mime type */
+  images?: Array<{
+    data: string;      // base64 string without data URI prefix
+    mime_type: string; // e.g., "image/jpeg", "image/png"
+  }>;
 }
 
 export interface ChatStreamChunk {

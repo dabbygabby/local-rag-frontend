@@ -36,8 +36,8 @@ interface FloatingChatInputProps {
   onOpenSettings: () => void;
   isStreaming: boolean;
   disabled?: boolean;
-  images: string[];
-  setImages: (images: string[]) => void;
+  images: Array<{ data: string; mime_type: string }>;
+  setImages: (images: Array<{ data: string; mime_type: string }>) => void;
 }
 
 export function FloatingChatInput({

@@ -55,7 +55,7 @@ export default function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   const [input, setInput] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<Array<{ data: string; mime_type: string }>>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   

@@ -6,10 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 interface ImageUploaderProps {
-  /** Called with an array of base64 data‑URL strings (no prefix needed) */
-  onChange: (images: string[]) => void;
+  /** Called with an array of image objects with base64 data and mime type */
+  onChange: (images: Array<{ data: string; mime_type: string }>) => void;
   /** Optional initial images (e.g. when editing) */
-  initialImages?: string[];
+  initialImages?: Array<{ data: string; mime_type: string }>;
   /** Optional class name for styling */
   className?: string;
   /** Whether the uploader is disabled */
@@ -18,8 +18,9 @@ interface ImageUploaderProps {
 
 interface ImagePreview {
   id: string;
-  dataUrl: string; // Full data URL for preview
-  base64: string;  // Base64 string without prefix for API
+  dataUrl: string;   // Full data URL for preview
+  base64: string;    // Base64 string without prefix for API
+  mimeType: string;  // MIME type (e.g., "image/jpeg")
 }
 
 export function ImageUploader({ 
@@ -33,10 +34,11 @@ export function ImageUploader({
   
   // Initialize previews from initial images
   const [previews, setPreviews] = useState<ImagePreview[]>(() =>
-    initialImages.map((base64, index) => ({
+    initialImages.map((img, index) => ({
       id: `initial-${index}`,
-      dataUrl: `data:image/jpeg;base64,${base64}`,
-      base64,
+      dataUrl: `data:${img.mime_type};base64,${img.data}`,
+      base64: img.data,
+      mimeType: img.mime_type,
     }))
   );
 
@@ -80,15 +82,16 @@ export function ImageUploader({
     });
   };
 
-  // Helper to convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
+  // Helper to convert file to base64 with mime type
+  const fileToBase64 = (file: File): Promise<{ base64: string; mimeType: string }> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
       reader.onload = () => {
         const result = reader.result as string;
-        // Strip the data URL prefix (e.g., "data:image/jpeg;base64,")
-        const base64 = result.split(',')[1];
+        // Extract mime type and base64 data
+        const [header, base64] = result.split(',');
+        const mimeType = header.match(/data:(.*?);base64/)?.[1] || file.type || 'image/jpeg';
         
         // Check if base64 size exceeds 4 MB
         const sizeInBytes = (base64.length * 3) / 4;
@@ -97,7 +100,7 @@ export function ImageUploader({
         if (sizeInMB > 4) {
           reject(new Error(`Base64 image exceeds 4 MB (${sizeInMB.toFixed(1)} MB)`));
         } else {
-          resolve(base64);
+          resolve({ base64, mimeType });
         }
       };
       
@@ -142,14 +145,15 @@ export function ImageUploader({
         if (!dimensionsValid) continue;
 
         try {
-          // Convert to base64
-          const base64 = await fileToBase64(file);
-          const dataUrl = `data:${file.type};base64,${base64}`;
+          // Convert to base64 with mime type
+          const { base64, mimeType } = await fileToBase64(file);
+          const dataUrl = `data:${mimeType};base64,${base64}`;
           
           newPreviews.push({
             id: generateId(),
             dataUrl,
             base64,
+            mimeType,
           });
         } catch (error) {
           toast({
@@ -163,7 +167,7 @@ export function ImageUploader({
       if (newPreviews.length > 0) {
         const updatedPreviews = [...previews, ...newPreviews];
         setPreviews(updatedPreviews);
-        onChange(updatedPreviews.map(p => p.base64));
+        onChange(updatedPreviews.map(p => ({ data: p.base64, mime_type: p.mimeType })));
       }
     } finally {
       setIsProcessing(false);
@@ -184,7 +188,7 @@ export function ImageUploader({
   const handleRemoveImage = (id: string) => {
     const updatedPreviews = previews.filter(p => p.id !== id);
     setPreviews(updatedPreviews);
-    onChange(updatedPreviews.map(p => p.base64));
+    onChange(updatedPreviews.map(p => ({ data: p.base64, mime_type: p.mimeType })));
   };
 
   // Handle click to open file dialog
