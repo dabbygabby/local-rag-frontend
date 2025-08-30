@@ -121,9 +121,41 @@ export default function HomePage() {
   const sendMessage = async () => {
     if ((!input.trim() && images.length === 0) || isStreaming || !isHydrated) return;
 
+    // Create multimodal content if images are present
+    let content: string | Array<{type: 'text' | 'image'; text?: string; image?: {data: string; mime_type: string}}>;
+    
+    if (images.length > 0) {
+      // Create multimodal content array
+      const contentArray: Array<{type: 'text' | 'image'; text?: string; image?: {data: string; mime_type: string}}> = [];
+      
+      // Add text content if present
+      if (input.trim()) {
+        contentArray.push({
+          type: 'text',
+          text: input.trim()
+        });
+      }
+      
+      // Add all images
+      images.forEach(img => {
+        contentArray.push({
+          type: 'image',
+          image: {
+            data: img.data,
+            mime_type: img.mime_type
+          }
+        });
+      });
+      
+      content = contentArray;
+    } else {
+      // Text-only message
+      content = input.trim();
+    }
+
     const userMsg: ChatMessage = {
       role: "user",
-      content: input.trim(),
+      content,
       timestamp: new Date().toISOString(),
     };
 
@@ -156,8 +188,6 @@ export default function HomePage() {
       vector_stores: noKb ? [] : settings.vector_stores,
       // Use the no‑KB system prompt when appropriate
       system_prompt: noKb ? DEFAULT_SYSTEM_PROMPT_NO_KB : settings.system_prompt,
-      // Include images if any are selected
-      images: images.length > 0 ? images : undefined,
     };
 
     await streamChat(

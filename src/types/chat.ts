@@ -4,7 +4,14 @@ export type ChatRole = "user" | "assistant" | "system";
 
 export interface ChatMessage {
   role: ChatRole;
-  content: string;
+  content: string | Array<{
+    type: 'text' | 'image';
+    text?: string;
+    image?: {
+      data: string;      // base64 string without data URI prefix
+      mime_type: string; // e.g., "image/jpeg", "image/png"
+    };
+  }>;
   timestamp: string;          // ISO string
   sources?: SourceDocument[]; // optional, shown when include_sources is true
   confidence?: number;        // optional, shown when include_confidence is true
@@ -29,11 +36,6 @@ export interface ChatRequest {
   condense_context?: boolean;        // default true
   vector_stores?: string[];
   metadata_filters?: Record<string, unknown>;
-  /** Array of image objects with base64 data and mime type */
-  images?: Array<{
-    data: string;      // base64 string without data URI prefix
-    mime_type: string; // e.g., "image/jpeg", "image/png"
-  }>;
 }
 
 export interface ChatStreamChunk {
