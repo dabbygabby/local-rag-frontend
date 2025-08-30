@@ -1,14 +1,23 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Settings, RotateCcw, ChevronDown } from "lucide-react";
+import { Send, Loader2, Settings, RotateCcw, Check, ChevronsUpDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { vectorStoreApi } from "@/lib/api";
 import { useKnowledgeBaseStore } from "@/stores/knowledge-base-store";
 
@@ -32,7 +41,7 @@ export function FloatingChatInput({
   disabled = false,
 }: FloatingChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [showKnowledgeDropdown, setShowKnowledgeDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
   const { selectedStoreIds, toggleStoreSelection } = useKnowledgeBaseStore();
 
   // Fetch available vector stores
@@ -70,75 +79,6 @@ export function FloatingChatInput({
       <div className="mx-auto max-w-[50%] min-w-[400px]">
         <Card className="shadow-lg border-2">
           <CardContent className="p-4 space-y-3">
-            {/* Knowledge Base Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Knowledge Bases</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowKnowledgeDropdown(!showKnowledgeDropdown)}
-                  className="h-6 px-2 text-xs"
-                >
-                  <ChevronDown className={`h-3 w-3 transition-transform ${showKnowledgeDropdown ? 'rotate-180' : ''}`} />
-                </Button>
-              </div>
-              
-              {/* Selected Knowledge Bases Display */}
-              <div className="flex flex-wrap gap-1 min-h-[24px]">
-                {selectedStores.length > 0 ? (
-                  selectedStores.map((store) => (
-                    <Badge
-                      key={store.store_id}
-                      variant="secondary"
-                      className="text-xs cursor-pointer hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900 dark:hover:text-red-200"
-                      onClick={() => toggleStoreSelection(store.store_id)}
-                    >
-                      {store.name} ×
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-xs text-muted-foreground">No knowledge bases selected</span>
-                )}
-              </div>
-
-              {/* Knowledge Base Dropdown */}
-              {showKnowledgeDropdown && (
-                <div className="border rounded-md p-3 max-h-40 overflow-y-auto bg-background">
-                  {storesLoading ? (
-                    <div className="text-sm text-muted-foreground">Loading knowledge bases...</div>
-                  ) : storesError ? (
-                    <div className="text-sm text-red-500">Failed to load knowledge bases</div>
-                  ) : vectorStores && vectorStores.length > 0 ? (
-                    <div className="space-y-2">
-                      {vectorStores.map((store) => (
-                        <div key={store.store_id} className="flex items-center space-x-2">
-                          <Checkbox
-                            checked={selectedStoreIds.includes(store.store_id)}
-                            onCheckedChange={() => toggleStoreSelection(store.store_id)}
-                          />
-                          <Label className="text-sm cursor-pointer" onClick={() => toggleStoreSelection(store.store_id)}>
-                            {store.name}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">No knowledge bases available</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Info for no knowledge bases */}
-            {selectedStoreIds.length === 0 && (
-              <Alert className="py-2">
-                <AlertDescription className="text-sm">
-                  No knowledge bases selected. You can chat with the AI using its general knowledge, or select knowledge bases above for document-specific answers.
-                </AlertDescription>
-              </Alert>
-            )}
-
             {/* Input Area */}
             <div className="flex items-end gap-3">
               <div className="flex-1">
@@ -168,7 +108,7 @@ export function FloatingChatInput({
               </Button>
             </div>
 
-            {/* Control Buttons */}
+            {/* Control Buttons with Knowledge Base Selection */}
             <div className="flex items-center justify-between pt-2 border-t">
               <div className="flex items-center gap-2">
                 <Button
@@ -189,11 +129,88 @@ export function FloatingChatInput({
                   <Settings className="h-4 w-4" />
                   Settings
                 </Button>
+                
+                {/* Knowledge Base Multiselect Dropdown */}
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      role="combobox"
+                      aria-expanded={open}
+                      className="flex items-center gap-2 min-w-[160px] justify-between"
+                    >
+                      <span className="truncate">
+                        {selectedStoreIds.length === 0
+                          ? "Select knowledge bases"
+                          : selectedStoreIds.length === 1
+                          ? selectedStores[0]?.name || "1 selected"
+                          : `${selectedStoreIds.length} selected`}
+                      </span>
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search knowledge bases..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>No knowledge bases found.</CommandEmpty>
+                        <CommandGroup>
+                          {storesLoading ? (
+                            <CommandItem disabled>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Loading knowledge bases...
+                            </CommandItem>
+                          ) : storesError ? (
+                            <CommandItem disabled>
+                              Failed to load knowledge bases
+                            </CommandItem>
+                          ) : vectorStores && vectorStores.length > 0 ? (
+                            vectorStores.map((store) => (
+                              <CommandItem
+                                key={store.store_id}
+                                value={store.name}
+                                onSelect={() => {
+                                  toggleStoreSelection(store.store_id);
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    selectedStoreIds.includes(store.store_id)
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }`}
+                                />
+                                {store.name}
+                              </CommandItem>
+                            ))
+                          ) : (
+                            <CommandItem disabled>
+                              No knowledge bases available
+                            </CommandItem>
+                          )}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               
-              <div className="text-xs text-muted-foreground">
-                {selectedStoreIds.length} knowledge base(s) selected
-              </div>
+              {/* Selected Knowledge Bases Pills */}
+              {selectedStores.length > 0 && (
+                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                  {selectedStores.map((store) => (
+                    <Badge
+                      key={store.store_id}
+                      variant="secondary"
+                      className="text-xs cursor-pointer hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900 dark:hover:text-red-200"
+                      onClick={() => toggleStoreSelection(store.store_id)}
+                    >
+                      {store.name} ×
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Keyboard Shortcut Hint */}
