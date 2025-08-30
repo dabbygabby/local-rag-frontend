@@ -1,24 +1,19 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Home, Search, Database, AppWindow, MessageCircle } from "lucide-react";
+import { MessageCircle, Search, Database, AppWindow, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the nav items outside the component so they can be reused
 const navItems = [
   {
     href: "/",
-    label: "Dashboard",
-    icon: Home,
+    label: "Chat",
+    icon: MessageCircle,
   },
   {
     href: "/query",
     label: "Query Playground",
     icon: Search,
-  },
-  {
-    href: "/chat",
-    label: "Chat",
-    icon: MessageCircle,
   },
   {
     href: "/stores",
@@ -29,6 +24,11 @@ const navItems = [
     href: "/apps",
     label: "Apps",
     icon: AppWindow,
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    icon: Settings,
   },
 ];
 

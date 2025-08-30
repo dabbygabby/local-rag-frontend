@@ -1,200 +1,251 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Database, FileText, Hash, Clock, CheckCircle } from "lucide-react";
-import { StatCard } from "@/components/StatCard";
-import { ConfirmationDialog } from "@/components/ConfirmationDialog";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect, useRef } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { MessageCircle, Loader2 } from "lucide-react";
+import { ChatMessage, ChatRequest, ChatSettings } from "@/types/chat";
+import { streamChat } from "@/lib/chatApi";
+import { MessageBubble } from "@/components/MessageBubble";
+import { PlaygroundSettings } from "@/components/PlaygroundSettings";
+import { FloatingChatInput } from "@/components/FloatingChatInput";
 import { useToast } from "@/hooks/use-toast";
-import { healthApi, statsApi, indexApi, formatUptime } from "@/lib/api";
+import { useKnowledgeBaseStore } from "@/stores/knowledge-base-store";
+import { DEFAULT_MAX_TOKENS } from "@/constants/tokens";
 
-export default function Dashboard() {
-  const [showRebuildConfirm, setShowRebuildConfirm] = useState(false);
-  const [isRebuilding, setIsRebuilding] = useState(false);
+// ------------------------------------------------------------
+//  Default system prompt used when the user has not picked a KB
+// ------------------------------------------------------------
+export const DEFAULT_SYSTEM_PROMPT_NO_KB = `You are a helpful AI assistant.
+Engage in a natural, open‑ended conversation. Answer questions directly
+using your own knowledge; do not try to look up external documents.
+If you don't know something, say so. Keep responses concise and friendly.`;
+
+// Session handling hook
+function useChatSession() {
+  const [sessionId, setSessionId] = useState<string>(() => {
+    if (typeof window === "undefined") return uuidv4();
+    const stored = localStorage.getItem("chatSessionId");
+    if (stored) return stored;
+    const id = uuidv4();
+    localStorage.setItem("chatSessionId", id);
+    return id;
+  });
+
+  const clearSession = () => {
+    const id = uuidv4();
+    setSessionId(id);
+    localStorage.setItem("chatSessionId", id);
+    localStorage.removeItem(`chatHistory:${sessionId}`);
+  };
+
+  return { sessionId, clearSession };
+}
+
+export default function HomePage() {
+  const { sessionId, clearSession } = useChatSession();
   const { toast } = useToast();
-
-  // Fetch health and stats data in parallel
-  const {
-    data: healthData,
-    isLoading: healthLoading,
-    error: healthError,
-  } = useQuery({
-    queryKey: ["health"],
-    queryFn: healthApi.getHealth,
-    refetchInterval: 30000, // Refetch every 30 seconds for real-time monitoring
+  const { selectedStoreIds } = useKnowledgeBaseStore();
+  
+  // Initialize messages from localStorage
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (typeof window === "undefined") return [];
+    const saved = localStorage.getItem(`chatHistory:${sessionId}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Default settings similar to the playground
+  const [settings, setSettings] = useState<ChatSettings>({
+    top_k: 20,
+    max_docs_for_context: 3,
+    similarity_threshold: 0,
+    include_metadata: false,
+    include_sources: true,
+    include_confidence: false,
+    query_expansion: false,
+    deep_reasoning: false,
+    multi_source_fetch: true,
+    temperature: 0.7,
+    max_tokens: DEFAULT_MAX_TOKENS,
+    system_prompt: "",
+    condense_context: true,
+    vector_stores: selectedStoreIds,
+    metadata_filters: {},
   });
 
-  const {
-    data: statsData,
-    isLoading: statsLoading,
-    error: statsError,
-    refetch: refetchStats,
-  } = useQuery({
-    queryKey: ["stats"],
-    queryFn: statsApi.getStats,
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
+  const endRef = useRef<HTMLDivElement>(null);
 
-  // Handle rebuild indexes
-  const handleRebuildIndexes = async () => {
-    setIsRebuilding(true);
-    try {
-      await indexApi.rebuildAll();
-      toast({
-        title: "✅ Index rebuild successfully started",
-        description: "The rebuild process has been initiated.",
-      });
-      setShowRebuildConfirm(false);
-      // Refetch stats after a short delay to show updated data
-      setTimeout(() => refetchStats(), 2000);
-    } catch {
-      toast({
-        title: "❌ Failed to start index rebuild",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRebuilding(false);
+  // Keep localStorage in sync with messages
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`chatHistory:${sessionId}`, JSON.stringify(messages));
     }
+  }, [messages, sessionId]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isStreaming]);
+
+  // Update settings when selected stores change
+  useEffect(() => {
+    setSettings(prev => ({ ...prev, vector_stores: selectedStoreIds }));
+  }, [selectedStoreIds]);
+
+  const handleNewSession = () => {
+    clearSession();
+    setMessages([]);
+    setInput("");
+    toast({
+      title: "New session started",
+      description: "Previous conversation history has been cleared.",
+    });
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || isStreaming) return;
+
+    const userMsg: ChatMessage = {
+      role: "user",
+      content: input.trim(),
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsStreaming(true);
+
+    // Create placeholder assistant message
+    const assistantMsg: ChatMessage = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, assistantMsg]);
+
+    // --------------------------------------------------------------
+    // 1️⃣  Detect "no knowledge‑base selected"
+    // --------------------------------------------------------------
+    const noKb = !settings.vector_stores || settings.vector_stores.length === 0;
+
+    // --------------------------------------------------------------
+    // 2️⃣  Prepare chat request with appropriate system prompt
+    // --------------------------------------------------------------
+    const request: ChatRequest = {
+      session_id: sessionId,
+      messages: [...messages, userMsg],
+      ...settings,
+      // Send an empty array when no KB – the backend treats this as "no KB"
+      vector_stores: noKb ? [] : settings.vector_stores,
+      // Use the no‑KB system prompt when appropriate
+      system_prompt: noKb ? DEFAULT_SYSTEM_PROMPT_NO_KB : settings.system_prompt,
+    };
+
+    await streamChat(
+      request,
+      (chunk) => {
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last.role !== "assistant") return prev;
+          
+          const updated: ChatMessage = {
+            ...last,
+            content: last.content + chunk.content,
+            sources: chunk.sources ?? last.sources,
+            confidence: chunk.usage?.total_tokens,
+          };
+          
+          return [...prev.slice(0, -1), updated];
+        });
+        
+        if (chunk.is_final) {
+          setIsStreaming(false);
+        }
+      },
+      (error) => {
+        setIsStreaming(false);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message,
+        });
+        
+        // Remove the placeholder message on error
+        setMessages((prev) => prev.slice(0, -1));
+      }
+    );
   };
 
 
 
   return (
-    <div className="space-y-6 p-4">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">RAG System Dashboard</h1>
-        <p className="text-muted-foreground">
-          Monitor your RAG system&apos;s health and performance in real-time.
-        </p>
-      </div>
-
-      {/* Health Status Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5" />
-            System Health
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {healthLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-          ) : healthError ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Failed to fetch system health status. Please check your API connection.
-              </AlertDescription>
-            </Alert>
-          ) : healthData ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`h-3 w-3 rounded-full ${
-                    healthData.status === "healthy" ? "bg-green-500" : "bg-red-500"
-                  }`}
-                />
-                <span className="font-medium">
-                  {healthData.status === "healthy" ? "System is healthy" : "System issues detected"}
-                </span>
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Messages container */}
+      <div className="flex-1 overflow-y-auto pb-64">
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-center p-8">
+            <div className="space-y-4 max-w-md">
+              <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">Start a conversation</h2>
+                <p className="text-muted-foreground">
+                  Chat with the AI using its general knowledge, or select knowledge bases for document-specific answers. The conversation context will be maintained throughout the session.
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                API Version: {healthData.version}
-              </p>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>💡 <strong>Tip:</strong> Select knowledge bases for document-specific answers</p>
+                <p>🔄 <strong>Context:</strong> Previous messages inform new responses</p>
+                <p>📚 <strong>Sources:</strong> View document sources when using knowledge bases</p>
+              </div>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {/* Statistics Grid */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">System Statistics</h2>
-        {statsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i}>
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-4 w-32" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-16" />
-                </CardContent>
-              </Card>
+          </div>
+        ) : (
+          <div className="space-y-0">
+            {messages.map((message, index) => (
+              <MessageBubble key={index} message={message} />
             ))}
+            
+            {/* Streaming indicator */}
+            {isStreaming && (
+              <div className="flex justify-start px-4 py-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Thinking...</span>
+                </div>
+              </div>
+            )}
+            
+            <div ref={endRef} />
           </div>
-        ) : statsError ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to fetch system statistics. Please try again later.
-            </AlertDescription>
-          </Alert>
-        ) : statsData ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title="Total Knowledge Bases"
-              value={statsData.total_vector_stores}
-              icon={Database}
-            />
-            <StatCard
-              title="Total Documents"
-              value={statsData.total_documents.toLocaleString()}
-              icon={FileText}
-            />
-            <StatCard
-              title="Total Chunks"
-              value={statsData.total_chunks.toLocaleString()}
-              icon={Hash}
-            />
-            <StatCard
-              title="System Uptime"
-              value={formatUptime(statsData.uptime_seconds)}
-              icon={Clock}
-            />
-          </div>
-        ) : null}
+        )}
       </div>
 
-      {/* Global Actions Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Global Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium mb-2">Index Management</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Rebuild all indexes to refresh the vector database with the latest data. 
-                This process can take some time depending on the amount of data.
-              </p>
-              <Button
-                onClick={() => setShowRebuildConfirm(true)}
-                disabled={isRebuilding}
-                variant="outline"
-              >
-                {isRebuilding ? "Rebuilding..." : "Rebuild All Indexes"}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Floating Chat Input */}
+      <FloatingChatInput
+        input={input}
+        setInput={setInput}
+        onSendMessage={sendMessage}
+        onNewSession={handleNewSession}
+        onOpenSettings={() => setShowSettings(true)}
+        isStreaming={isStreaming}
+        disabled={false}
+      />
 
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showRebuildConfirm}
-        onOpenChange={setShowRebuildConfirm}
-        title="Rebuild All Indexes"
-        description="Are you sure you want to rebuild all indexes? This will re-ingest all source data and can take some time."
-        confirmText="Yes, Rebuild"
-        onConfirm={handleRebuildIndexes}
+      {/* Settings */}
+      <PlaygroundSettings
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={settings}
+        onChange={(newSettings) => {
+          console.log("💬 CHAT PAGE onChange:", {
+            newSettings,
+            timestamp: new Date().toISOString()
+          });
+          setSettings(newSettings);
+        }}
+        variant="sheet"
+        title="Chat Settings"
       />
     </div>
   );
